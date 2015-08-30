@@ -23,6 +23,11 @@ Minimal logic  ([Nm.agda](src/Nm.agda), [Nm.idr](src/Nm.idr))
 Classical logic  ([Nc.agda](src/Nc.agda), [Nc.idr](src/Nc.idr))
 
 
+##### Ni
+
+Intuitionistic logic  ([Ni.agda](src/Ni.agda), [Ni.idr](src/Ni.idr))
+
+
 #### Hilbert-style
 
 ##### ImpHm
