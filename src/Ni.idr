@@ -69,20 +69,29 @@ data Theorem : (Value -> Type) -> (Formula -> Type) -> Formula -> Type where
         -> Theorem vs hs a
 
 
-I : Theorem vs hs (a >> a)
+-- NOTE: Issue with scoped implicits:
+-- https://github.com/idris-lang/Idris-dev/issues/2565
+
+syntax "Theorem1" [a] = Theorem vs hs a
+
+-- Theorem1 : Formula -> Type
+-- Theorem1 a = {vs : Value -> Type} -> {hs : Formula -> Type} -> Theorem vs hs a
+
+
+I : Theorem1 (a >> a)
 I = lam x >> hyp x
 
-K : Theorem vs hs (a >> b >> a)
+K : Theorem1 (a >> b >> a)
 K = lam x >>
       lam y >> hyp x
 
-S : Theorem vs hs ((a >> b >> c) >> (a >> b) >> a >> c)
+S : Theorem1 ((a >> b >> c) >> (a >> b) >> a >> c)
 S = lam f >>
       lam g >>
         lam x >> (hyp f << hyp x) << (hyp g << hyp x)
 
 
-Example214 : {p, q : Value -> Formula} -> Theorem vs hs
+Example214 : {p, q : Value -> Formula} -> Theorem1
   (FORALL (\x => p x \/ NOT (p x)) /\ FORALL (\x => p x >> EXISTS (\y => q y)) >>
     FORALL (\x => EXISTS (\y => p x >> q y)))
 Example214 =

@@ -20,14 +20,18 @@ data Theorem (hs : Formula -> Set) : Formula -> Set where
                       -> Theorem hs b
 
 
-I : forall {hs a} -> Theorem hs (a >> a)
+Theorem1 : Formula -> Set1
+Theorem1 a = forall {hs} -> Theorem hs a
+
+
+I : forall {a} -> Theorem1 (a >> a)
 I = lam x >> hyp x
 
-K : forall {hs a b} -> Theorem hs (a >> b >> a)
+K : forall {a b} -> Theorem1 (a >> b >> a)
 K = lam x >>
       lam y >> hyp x
 
-S : forall {hs a b c} -> Theorem hs ((a >> b >> c) >> (a >> b) >> a >> c)
+S : forall {a b c} -> Theorem1 ((a >> b >> c) >> (a >> b) >> a >> c)
 S = lam f >>
       lam g >>
         lam x >> (hyp f << hyp x) << (hyp g << hyp x)
