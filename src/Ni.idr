@@ -1,91 +1,97 @@
 module Ni
 
 
-infixl 7 &&
-infixl 6 ||
-infixr 5 >>
-infixr 4 >><<
-
-
 data Value : Type where
   Unit : Value
 
 
+infixl 7 /\
+infixl 6 \/
+infixr 5 |>
+infixr 4 |><|
+
 data Formula : Type where
-  (>>)   : Formula -> Formula -> Formula
-  (&&)   : Formula -> Formula -> Formula
-  (||)   : Formula -> Formula -> Formula
+  (|>)   : Formula -> Formula -> Formula
+  (/\)   : Formula -> Formula -> Formula
+  (\/)   : Formula -> Formula -> Formula
   FORALL : (Value -> Formula) -> Formula
   EXISTS : (Value -> Formula) -> Formula
-  FALSE  : Formula
+  BOTTOM : Formula
 
-(>><<) : Formula -> Formula -> Formula
-a >><< b = (a >> b) && (b >> a)
+(|><|) : Formula -> Formula -> Formula
+a |><| b = (a |> b) /\ (b |> a)
 
 NOT : Formula -> Formula
-NOT a = a >> FALSE
+NOT a = a |> BOTTOM
 
-TRUE : Formula
-TRUE = FALSE >> FALSE
+TOP : Formula
+TOP = BOTTOM |> BOTTOM
 
+
+infixl 6 <<!
+infixl 5 <<
+
+syntax lam {a} ">>" [b]                                = lam' (\a => b)
+syntax "[" [a] "*" [b] "]"                             = pair' a b
+syntax "case" [ab] "of" {a} ">>" [c1] or {b} ">>" [c2] = case' ab (\a => c1) (\b => c2)
+syntax pi {x} "!>>" [px]                               = pi' (\x => px)
+syntax "[" [x] "!*" [px] "]"                           = sig' x px
+syntax take [t] as {px} ">>" [a]                       = take' t (\px => a)
 
 data Theorem : (Value -> Type) -> (Formula -> Type) -> Formula -> Type where
-  Hyp    : hs a
+  hyp    : hs a
         -> Theorem vs hs a
-  Imp    : (hs a -> Theorem vs hs b)
-        -> Theorem vs hs (a >> b)
-  Emp    : Theorem vs hs (a >> b) -> Theorem vs hs a
+  lam'   : (hs a -> Theorem vs hs b)
+        -> Theorem vs hs (a |> b)
+  (<<)   : Theorem vs hs (a |> b) -> Theorem vs hs a
         -> Theorem vs hs b
-  And    : Theorem vs hs a -> Theorem vs hs b
-        -> Theorem vs hs (a && b)
-  Lend   : Theorem vs hs (a && b)
+  pair'  : Theorem vs hs a -> Theorem vs hs b
+        -> Theorem vs hs (a /\ b)
+  fst    : Theorem vs hs (a /\ b)
         -> Theorem vs hs a
-  Rend   : Theorem vs hs (a && b)
+  snd    : Theorem vs hs (a /\ b)
         -> Theorem vs hs b
-  Lor    : Theorem vs hs a
-        -> Theorem vs hs (a || b)
-  Ror    : Theorem vs hs b
-        -> Theorem vs hs (a || b)
-  Er     : Theorem vs hs (a || b) -> (hs a -> Theorem vs hs c) -> (hs b -> Theorem vs hs c)
+  one    : Theorem vs hs a
+        -> Theorem vs hs (a \/ b)
+  two    : Theorem vs hs b
+        -> Theorem vs hs (a \/ b)
+  case'  : Theorem vs hs (a \/ b) -> (hs a -> Theorem vs hs c) -> (hs b -> Theorem vs hs c)
         -> Theorem vs hs c
-  Forall : ({x : Value} -> vs x -> Theorem vs hs (p x))
+  pi'    : ({x : Value} -> vs x -> Theorem vs hs (p x))
         -> Theorem vs hs (FORALL p)
-  Fae    : Theorem vs hs (FORALL p) -> vs x
+  (<<!)  : Theorem vs hs (FORALL p) -> vs x
         -> Theorem vs hs (p x)
-  Exists : Theorem vs hs (p x) -> vs x
+  sig'   : vs x -> Theorem vs hs (p x)
         -> Theorem vs hs (EXISTS p)
-  Ee     : Theorem vs hs (EXISTS p) -> (hs (p x) -> Theorem vs hs a)
+  take'  : Theorem vs hs (EXISTS p) -> (hs (p x) -> Theorem vs hs a)
         -> Theorem vs hs a
-  False  : Theorem vs hs FALSE
+  efq    : Theorem vs hs BOTTOM
         -> Theorem vs hs a
 
 
-I : Theorem vs hs (a >> a)
-I = Imp $ \x => Hyp x
+I : Theorem vs hs (a |> a)
+I = lam x >> hyp x
 
-K : Theorem vs hs (a >> b >> a)
-K = Imp $ \x =>
-      Imp $ \y => Hyp x
+K : Theorem vs hs (a |> b |> a)
+K = lam x >>
+      lam y >> hyp x
 
-S : Theorem vs hs ((a >> b >> c) >> (a >> b) >> a >> c)
-S = Imp $ \f =>
-      Imp $ \g =>
-        Imp $ \x => Emp (Emp (Hyp f) (Hyp x))
-                        (Emp (Hyp g) (Hyp x))
+S : Theorem vs hs ((a |> b |> c) |> (a |> b) |> a |> c)
+S = lam f >>
+      lam g >>
+        lam x >> (hyp f << hyp x) << (hyp g << hyp x)
 
 
-example214i : {p, q : Value -> Formula} -> Theorem vs hs
-  (FORALL (\x => p x || NOT (p x)) && FORALL (\x => p x >> EXISTS (\y => q y)) >>
-    FORALL (\x => EXISTS (\y => p x >> q y)))
-example214i =
-  Imp $ \u' =>
-    Forall $ \x =>
-      Er (Fae (Lend (Hyp u')) x)
-         (\u =>
-           Ee (Emp (Fae (Rend (Hyp u')) x)
-                   (Hyp u))
-              (\w =>
-                Exists (Imp (\_ => Hyp w)) x))
-         (\v =>
-           Exists (Imp $ \w' =>
-             False (Emp (Hyp v) (Hyp w'))) x)
+Example214 : {p, q : Value -> Formula} -> Theorem vs hs
+  (FORALL (\x => p x \/ NOT (p x)) /\ FORALL (\x => p x |> EXISTS (\y => q y)) |>
+    FORALL (\x => EXISTS (\y => p x |> q y)))
+Example214 =
+  lam u' >>
+    pi x !>>
+      case fst (hyp u') <<! x
+      of u >>
+        take snd (hyp u') <<! x << hyp u
+        as w >>
+          [ x !* lam z >> hyp w ]
+      or v >>
+        [ x !* lam w' >> efq (hyp v << hyp w') ]
