@@ -38,16 +38,20 @@ Minimal implication logic  ([ImpHm.agda](src/ImpHm.agda), [ImpHm.idr](src/ImpHm.
 Usage
 -----
 
-##### Agda
+To check all files automatically:
 
 ```
-$ agda -i src src/FILE.agda
+$ make
 ```
 
-##### Idris
+To load a particular file for interactive use:
 
 ```
-$ idris --noprelude src/FILE.idr
+$ agda -I --safe -i src src/FILE.agda
+```
+
+```
+$ idris --noprelude --total src/FILE.idr
 ```
 
 
