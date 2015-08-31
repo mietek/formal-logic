@@ -4,10 +4,6 @@ module ImpHm
 infixr 5 >>
 
 
-data Value : Type where
-  Unit : Value
-
-
 data Formula : Type where
   (>>) : Formula -> Formula -> Formula
 
@@ -21,9 +17,3 @@ data Theorem : Formula -> Type where
 
 I : Theorem (a >> a)
 I {a} = Emp (Emp (S {b = a >> a}) K) K
-
-I' : Theorem (a >> a)
-I' = Emp (Emp f K) K
-  where
-    f : Theorem ((a >> (a >> a) >> a) >> (a >> a >> a) >> a >> a)
-    f = S

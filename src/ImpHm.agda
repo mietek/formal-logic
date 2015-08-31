@@ -4,10 +4,6 @@ module ImpHm where
 infixr 5 _>>_
 
 
-data Value : Set where
-  Unit : Value
-
-
 data Formula : Set where
   _>>_ : Formula -> Formula -> Formula
 
@@ -21,9 +17,3 @@ data Theorem : Formula -> Set where
 
 I : forall {a} -> Theorem (a >> a)
 I {a = a} = Emp (Emp (S {b = a >> a}) K) K
-
-I' : forall {a} -> Theorem (a >> a)
-I' = Emp (Emp f K) K
-  where
-    f : forall {a} -> Theorem ((a >> (a >> a) >> a) >> (a >> a >> a) >> a >> a)
-    f = S
