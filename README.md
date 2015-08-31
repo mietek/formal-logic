@@ -58,13 +58,13 @@ $ idris --noprelude src/FILE.idr
 | Symbol   | Name               | Introduction   | Elimination         |
 | :------- | :----------------- | :------------- | :------------------ |
 | —        | Hypothesis         | `hyp_`         | —                   |
-| `|>`     | Implication (⊃)    | `lam_>>_`      | `_<<_`              |
+| `>>`     | Implication (⊃)    | `lam_>>_`      | `_<<_`              |
 | `/\`     | Conjunction (∧)    | `[_*_]`        | `fst_`, `snd_`      |
 | `\/`     | Disjunction (∨)    | `one_`, `two_` | `case_of_>>_or_>>_` |
 | `FORALL` | Universal (∀)      | `pi_!>>_`      | `_<<!_`             |
 | `EXISTS` | Existential (∃)    | `[_!*_]`       | `take_as_>>_`       |
 | `BOTTOM` | Falsehood (⊥)      | —              | `efq_>>_`; `efq_`   |
-| `|><|`   | Biconditional (⊃⊂) | —              | —                   |
+| `>><<`   | Biconditional (⊃⊂) | —              | —                   |
 | `NOT`    | Negation (¬)       | —              | —                   |
 | `TOP`    | Truth (⊤)          | —              | —                   |
 

@@ -7,25 +7,25 @@ data Value : Type where
 
 infixl 7 /\
 infixl 6 \/
-infixr 5 |>
-infixr 4 |><|
+infixr 5 >>
+infixr 4 >><<
 
 data Formula : Type where
-  (|>)   : Formula -> Formula -> Formula
+  (>>)   : Formula -> Formula -> Formula
   (/\)   : Formula -> Formula -> Formula
   (\/)   : Formula -> Formula -> Formula
   FORALL : (Value -> Formula) -> Formula
   EXISTS : (Value -> Formula) -> Formula
   BOTTOM : Formula
 
-(|><|) : Formula -> Formula -> Formula
-a |><| b = (a |> b) /\ (b |> a)
+(>><<) : Formula -> Formula -> Formula
+a >><< b = (a >> b) /\ (b >> a)
 
 NOT : Formula -> Formula
-NOT a = a |> BOTTOM
+NOT a = a >> BOTTOM
 
 TOP : Formula
-TOP = BOTTOM |> BOTTOM
+TOP = BOTTOM >> BOTTOM
 
 
 infixl 6 <<!
@@ -42,8 +42,8 @@ data Theorem : (Value -> Type) -> (Formula -> Type) -> Formula -> Type where
   hyp    : hs a
         -> Theorem vs hs a
   lam'   : (hs a -> Theorem vs hs b)
-        -> Theorem vs hs (a |> b)
-  (<<)   : Theorem vs hs (a |> b) -> Theorem vs hs a
+        -> Theorem vs hs (a >> b)
+  (<<)   : Theorem vs hs (a >> b) -> Theorem vs hs a
         -> Theorem vs hs b
   pair'  : Theorem vs hs a -> Theorem vs hs b
         -> Theorem vs hs (a /\ b)
@@ -67,14 +67,14 @@ data Theorem : (Value -> Type) -> (Formula -> Type) -> Formula -> Type where
         -> Theorem vs hs a
 
 
-I : Theorem vs hs (a |> a)
+I : Theorem vs hs (a >> a)
 I = lam x >> hyp x
 
-K : Theorem vs hs (a |> b |> a)
+K : Theorem vs hs (a >> b >> a)
 K = lam x >>
       lam y >> hyp x
 
-S : Theorem vs hs ((a |> b |> c) |> (a |> b) |> a |> c)
+S : Theorem vs hs ((a >> b >> c) >> (a >> b) >> a >> c)
 S = lam f >>
       lam g >>
         lam x >> (hyp f << hyp x) << (hyp g << hyp x)
