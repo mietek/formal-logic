@@ -28,6 +28,11 @@ TOP : Formula
 TOP = BOTTOM >> BOTTOM
 
 
+data Context : Set where
+  value   : Value -> Context
+  formula : Formula -> Context
+
+
 infixl 6 _<<!_
 infixl 5 _<<_
 
@@ -38,41 +43,41 @@ syntax pi' (\x -> px)                 = pi x !>> px
 syntax sig' x px                      = [ x !* px ]
 syntax take' t (\px -> a)             = take t as px >> a
 
-data Theorem (vs : Value -> Set) (hs : Formula -> Set) : Formula -> Set where
-  hyp    : forall {a}     -> hs a
-                          -> Theorem vs hs a
-  lam'   : forall {a b}   -> (hs a -> Theorem vs hs b)
-                          -> Theorem vs hs (a >> b)
-  _<<_   : forall {a b}   -> Theorem vs hs (a >> b) -> Theorem vs hs a
-                          -> Theorem vs hs b
-  pair'  : forall {a b}   -> Theorem vs hs a -> Theorem vs hs b
-                          -> Theorem vs hs (a /\ b)
-  fst    : forall {a b}   -> Theorem vs hs (a /\ b)
-                          -> Theorem vs hs a
-  snd    : forall {a b}   -> Theorem vs hs (a /\ b)
-                          -> Theorem vs hs b
-  one    : forall {a b}   -> Theorem vs hs a
-                          -> Theorem vs hs (a \/ b)
-  two    : forall {a b}   -> Theorem vs hs b
-                          -> Theorem vs hs (a \/ b)
-  case'  : forall {a b c} -> Theorem vs hs (a \/ b) -> (hs a -> Theorem vs hs c) -> (hs b -> Theorem vs hs c)
-                          -> Theorem vs hs c
-  pi'    : forall {p}     -> (forall {x} -> vs x -> Theorem vs hs (p x))
-                          -> Theorem vs hs (FORALL p)
-  _<<!_  : forall {p x}   -> Theorem vs hs (FORALL p) -> vs x
-                          -> Theorem vs hs (p x)
-  sig'   : forall {p x}   -> vs x -> Theorem vs hs (p x)
-                          -> Theorem vs hs (EXISTS p)
-  take'  : forall {p x a} -> Theorem vs hs (EXISTS p) -> (hs (p x) -> Theorem vs hs a)
-                          -> Theorem vs hs a
-  efq    : forall {a}     -> Theorem vs hs BOTTOM
-                          -> Theorem vs hs a
+data Theorem (cx : Context -> Set) : Formula -> Set where
+  hyp    : forall {a}     -> cx (formula a)
+                          -> Theorem cx a
+  lam'   : forall {a b}   -> (cx (formula a) -> Theorem cx b)
+                          -> Theorem cx (a >> b)
+  _<<_   : forall {a b}   -> Theorem cx (a >> b) -> Theorem cx a
+                          -> Theorem cx b
+  pair'  : forall {a b}   -> Theorem cx a -> Theorem cx b
+                          -> Theorem cx (a /\ b)
+  fst    : forall {a b}   -> Theorem cx (a /\ b)
+                          -> Theorem cx a
+  snd    : forall {a b}   -> Theorem cx (a /\ b)
+                          -> Theorem cx b
+  one    : forall {a b}   -> Theorem cx a
+                          -> Theorem cx (a \/ b)
+  two    : forall {a b}   -> Theorem cx b
+                          -> Theorem cx (a \/ b)
+  case'  : forall {a b c} -> Theorem cx (a \/ b) -> (cx (formula a) -> Theorem cx c) -> (cx (formula b) -> Theorem cx c)
+                          -> Theorem cx c
+  pi'    : forall {p}     -> (forall {x} -> cx (value x) -> Theorem cx (p x))
+                          -> Theorem cx (FORALL p)
+  _<<!_  : forall {p x}   -> Theorem cx (FORALL p) -> cx (value x)
+                          -> Theorem cx (p x)
+  sig'   : forall {p x}   -> cx (value x) -> Theorem cx (p x)
+                          -> Theorem cx (EXISTS p)
+  take'  : forall {p x a} -> Theorem cx (EXISTS p) -> (cx (formula (p x)) -> Theorem cx a)
+                          -> Theorem cx a
+  efq    : forall {a}     -> Theorem cx BOTTOM
+                          -> Theorem cx a
 
 
 infix 1 ||-_
 
 ||-_ : Formula -> Set1
-||- a = forall {vs hs} -> Theorem vs hs a
+||- a = forall {cx} -> Theorem cx a
 
 
 I : forall {a} -> ||- a >> a

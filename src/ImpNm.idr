@@ -12,23 +12,23 @@ infixl 5 <<
 syntax "lam" {a} ">>" [b] = lam' (\a => b)
 
 data Theorem : (Formula -> Type) -> Formula -> Type where
-  hyp  : hs a
-      -> Theorem hs a
-  lam' : (hs a -> Theorem hs b)
-      -> Theorem hs (a >> b)
-  (<<) : Theorem hs (a >> b) -> Theorem hs a
-      -> Theorem hs b
+  hyp  : cx a
+      -> Theorem cx a
+  lam' : (cx a -> Theorem cx b)
+      -> Theorem cx (a >> b)
+  (<<) : Theorem cx (a >> b) -> Theorem cx a
+      -> Theorem cx b
 
 
 -- NOTE: Issue with scoped implicits:
 -- https://github.com/idris-lang/Idris-dev/issues/2565
 
-syntax "||-" [a] = Theorem hs a
+syntax "||-" [a] = Theorem cx a
 
 -- prefix 1 ||-
 --
 -- (||-) : Formula -> Type
--- (||-) a = {hs : Formula -> Type} -> Theorem hs a
+-- (||-) a = {cx : Formula -> Type} -> Theorem cx a
 
 
 I : ||- a >> a

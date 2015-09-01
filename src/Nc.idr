@@ -28,6 +28,11 @@ TOP : Formula
 TOP = BOTTOM >> BOTTOM
 
 
+data Context : Type where
+  value   : Value -> Context
+  formula : Formula -> Context
+
+
 infixl 6 <<!
 infixl 5 <<
 
@@ -39,46 +44,46 @@ syntax "[" [x] "!*" [px] "]"                           = sig' x px
 syntax take [t] as {px} ">>" [a]                       = take' t (\px => a)
 syntax "efq" {na} ">>" [b]                             = efq' (\na => b)
 
-data Theorem : (Value -> Type) -> (Formula -> Type) -> Formula -> Type where
-  hyp    : hs a
-        -> Theorem vs hs a
-  lam'   : (hs a -> Theorem vs hs b)
-        -> Theorem vs hs (a >> b)
-  (<<)   : Theorem vs hs (a >> b) -> Theorem vs hs a
-        -> Theorem vs hs b
-  pair'  : Theorem vs hs a -> Theorem vs hs b
-        -> Theorem vs hs (a /\ b)
-  fst    : Theorem vs hs (a /\ b)
-        -> Theorem vs hs a
-  snd    : Theorem vs hs (a /\ b)
-        -> Theorem vs hs b
-  one    : Theorem vs hs a
-        -> Theorem vs hs (a \/ b)
-  two    : Theorem vs hs b
-        -> Theorem vs hs (a \/ b)
-  case'  : Theorem vs hs (a \/ b) -> (hs a -> Theorem vs hs c) -> (hs b -> Theorem vs hs c)
-        -> Theorem vs hs c
-  pi'    : ({x : Value} -> vs x -> Theorem vs hs (p x))
-        -> Theorem vs hs (FORALL p)
-  (<<!)  : Theorem vs hs (FORALL p) -> vs x
-        -> Theorem vs hs (p x)
-  sig'   : vs x -> Theorem vs hs (p x)
-        -> Theorem vs hs (EXISTS p)
-  take'  : Theorem vs hs (EXISTS p) -> (hs (p x) -> Theorem vs hs a)
-        -> Theorem vs hs a
-  efq'   : (hs (NOT a) -> Theorem vs hs BOTTOM)
-        -> Theorem vs hs a
+data Theorem : (Context -> Type) -> Formula -> Type where
+  hyp    : cx (formula a)
+        -> Theorem cx a
+  lam'   : (cx (formula a) -> Theorem cx b)
+        -> Theorem cx (a >> b)
+  (<<)   : Theorem cx (a >> b) -> Theorem cx a
+        -> Theorem cx b
+  pair'  : Theorem cx a -> Theorem cx b
+        -> Theorem cx (a /\ b)
+  fst    : Theorem cx (a /\ b)
+        -> Theorem cx a
+  snd    : Theorem cx (a /\ b)
+        -> Theorem cx b
+  one    : Theorem cx a
+        -> Theorem cx (a \/ b)
+  two    : Theorem cx b
+        -> Theorem cx (a \/ b)
+  case'  : Theorem cx (a \/ b) -> (cx (formula a) -> Theorem cx c) -> (cx (formula b) -> Theorem cx c)
+        -> Theorem cx c
+  pi'    : ({x : Value} -> cx (value x) -> Theorem cx (p x))
+        -> Theorem cx (FORALL p)
+  (<<!)  : Theorem cx (FORALL p) -> cx (value x)
+        -> Theorem cx (p x)
+  sig'   : cx (value x) -> Theorem cx (p x)
+        -> Theorem cx (EXISTS p)
+  take'  : Theorem cx (EXISTS p) -> (cx (formula (p x)) -> Theorem cx a)
+        -> Theorem cx a
+  efq'   : (cx (formula (NOT a)) -> Theorem cx BOTTOM)
+        -> Theorem cx a
 
 
 -- NOTE: Issue with scoped implicits:
 -- https://github.com/idris-lang/Idris-dev/issues/2565
 
-syntax "||-" [a] = Theorem vs hs a
+syntax "||-" [a] = Theorem cx a
 
 -- prefix 1 ||-
 --
 -- (||-) : Formula -> Type
--- (||-) a = {vs : Value -> Type} -> {hs : Formula -> Type} -> Theorem vs hs a
+-- (||-) a = {cx : Context -> Type} -> Theorem cx a
 
 
 I : ||- a >> a
