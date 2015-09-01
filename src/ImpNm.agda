@@ -11,19 +11,21 @@ infixl 5 _<<_
 
 syntax lam' (\a -> b) = lam a >> b
 
-data Theorem (cx : Formula -> Set) : Formula -> Set where
+infix 1 _|-_
+
+data _|-_ (cx : Formula -> Set) : Formula -> Set where
   hyp  : forall {a}   -> cx a
-                      -> Theorem cx a
-  lam' : forall {a b} -> (cx a -> Theorem cx b)
-                      -> Theorem cx (a >> b)
-  _<<_ : forall {a b} -> Theorem cx (a >> b) -> Theorem cx a
-                      -> Theorem cx b
+                      -> cx |- a
+  lam' : forall {a b} -> (cx a -> cx |- b)
+                      -> cx |- a >> b
+  _<<_ : forall {a b} -> cx |- a >> b -> cx |- a
+                      -> cx |- b
 
 
 infix 1 ||-_
 
 ||-_ : Formula -> Set1
-||- a = forall {cx} -> Theorem cx a
+||- a = forall {cx} -> cx |- a
 
 
 I : forall {a} -> ||- a >> a

@@ -11,24 +11,26 @@ infixl 5 <<
 
 syntax "lam" {a} ">>" [b] = lam' (\a => b)
 
-data Theorem : (Formula -> Type) -> Formula -> Type where
+infix 1 |-
+
+data (|-) : (Formula -> Type) -> Formula -> Type where
   hyp  : cx a
-      -> Theorem cx a
-  lam' : (cx a -> Theorem cx b)
-      -> Theorem cx (a >> b)
-  (<<) : Theorem cx (a >> b) -> Theorem cx a
-      -> Theorem cx b
+      -> cx |- a
+  lam' : (cx a -> cx |- b)
+      -> cx |- a >> b
+  (<<) : cx |- a >> b -> cx |- a
+      -> cx |- b
 
 
 -- NOTE: Issue with scoped implicits:
 -- https://github.com/idris-lang/Idris-dev/issues/2565
 
-syntax "||-" [a] = Theorem cx a
+syntax "||-" [a] = cx |- a
 
 -- prefix 1 ||-
 --
 -- (||-) : Formula -> Type
--- (||-) a = {cx : Formula -> Type} -> Theorem cx a
+-- (||-) a = {cx : Formula -> Type} -> cx |- a
 
 
 I : ||- a >> a

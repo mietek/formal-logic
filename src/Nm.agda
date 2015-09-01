@@ -43,39 +43,41 @@ syntax pi' (\x -> px)                 = pi x !>> px
 syntax sig' x px                      = [ x !* px ]
 syntax take' t (\px -> a)             = take t as px >> a
 
-data Theorem (cx : Context -> Set) : Formula -> Set where
-  hyp    : forall {a}     -> cx (formula a)
-                          -> Theorem cx a
-  lam'   : forall {a b}   -> (cx (formula a) -> Theorem cx b)
-                          -> Theorem cx (a >> b)
-  _<<_   : forall {a b}   -> Theorem cx (a >> b) -> Theorem cx a
-                          -> Theorem cx b
-  pair'  : forall {a b}   -> Theorem cx a -> Theorem cx b
-                          -> Theorem cx (a /\ b)
-  fst    : forall {a b}   -> Theorem cx (a /\ b)
-                          -> Theorem cx a
-  snd    : forall {a b}   -> Theorem cx (a /\ b)
-                          -> Theorem cx b
-  one    : forall {a b}   -> Theorem cx a
-                          -> Theorem cx (a \/ b)
-  two    : forall {a b}   -> Theorem cx b
-                          -> Theorem cx (a \/ b)
-  case'  : forall {a b c} -> Theorem cx (a \/ b) -> (cx (formula a) -> Theorem cx c) -> (cx (formula b) -> Theorem cx c)
-                          -> Theorem cx c
-  pi'    : forall {p}     -> (forall {x} -> cx (value x) -> Theorem cx (p x))
-                          -> Theorem cx (FORALL p)
-  _<<!_  : forall {p x}   -> Theorem cx (FORALL p) -> cx (value x)
-                          -> Theorem cx (p x)
-  sig'   : forall {p x}   -> cx (value x) -> Theorem cx (p x)
-                          -> Theorem cx (EXISTS p)
-  take'  : forall {p x a} -> Theorem cx (EXISTS p) -> (cx (formula (p x)) -> Theorem cx a)
-                          -> Theorem cx a
+infix 1 _|-_
+
+data _|-_ (cx : Context -> Set) : Formula -> Set where
+  hyp   : forall {a}     -> cx (formula a)
+                         -> cx |- a
+  lam'  : forall {a b}   -> (cx (formula a) -> cx |- b)
+                         -> cx |- a >> b
+  _<<_  : forall {a b}   -> cx |- a >> b -> cx |- a
+                         -> cx |- b
+  pair' : forall {a b}   -> cx |- a -> cx |- b
+                         -> cx |- a /\ b
+  fst   : forall {a b}   -> cx |- a /\ b
+                         -> cx |- a
+  snd   : forall {a b}   -> cx |- a /\ b
+                         -> cx |- b
+  one   : forall {a b}   -> cx |- a
+                         -> cx |- a \/ b
+  two   : forall {a b}   -> cx |- b
+                         -> cx |- a \/ b
+  case' : forall {a b c} -> cx |- a \/ b -> (cx (formula a) -> cx |- c) -> (cx (formula b) -> cx |- c)
+                         -> cx |- c
+  pi'   : forall {p}     -> (forall {x} -> cx (value x) -> cx |- p x)
+                         -> cx |- FORALL p
+  _<<!_ : forall {p x}   -> cx |- FORALL p -> cx (value x)
+                         -> cx |- p x
+  sig'  : forall {p x}   -> cx (value x) -> cx |- p x
+                         -> cx |- EXISTS p
+  take' : forall {p x a} -> cx |- EXISTS p -> (cx (formula (p x)) -> cx |- a)
+                         -> cx |- a
 
 
 infix 1 ||-_
 
 ||-_ : Formula -> Set1
-||-_ a = forall {cx} -> Theorem cx a
+||-_ a = forall {cx} -> cx |- a
 
 
 I : forall {a} -> ||- a >> a

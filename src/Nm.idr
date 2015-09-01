@@ -43,44 +43,46 @@ syntax pi {x} "!>>" [px]                               = pi' (\x => px)
 syntax "[" [x] "!*" [px] "]"                           = sig' x px
 syntax take [t] as {px} ">>" [a]                       = take' t (\px => a)
 
-data Theorem : (Context -> Type) -> Formula -> Type where
-  hyp    : cx (formula a)
-        -> Theorem cx a
-  lam'   : (cx (formula a) -> Theorem cx b)
-        -> Theorem cx (a >> b)
-  (<<)   : Theorem cx (a >> b) -> Theorem cx a
-        -> Theorem cx b
-  pair'  : Theorem cx a -> Theorem cx b
-        -> Theorem cx (a /\ b)
-  fst    : Theorem cx (a /\ b)
-        -> Theorem cx a
-  snd    : Theorem cx (a /\ b)
-        -> Theorem cx b
-  one    : Theorem cx a
-        -> Theorem cx (a \/ b)
-  two    : Theorem cx b
-        -> Theorem cx (a \/ b)
-  case'  : Theorem cx (a \/ b) -> (cx (formula a) -> Theorem cx c) -> (cx (formula b) -> Theorem cx c)
-        -> Theorem cx c
-  pi'    : ({x : Value} -> cx (value x) -> Theorem cx (p x))
-        -> Theorem cx (FORALL p)
-  (<<!)  : Theorem cx (FORALL p) -> cx (value x)
-        -> Theorem cx (p x)
-  sig'   : cx (value x) -> Theorem cx (p x)
-        -> Theorem cx (EXISTS p)
-  take'  : Theorem cx (EXISTS p) -> (cx (formula (p x)) -> Theorem cx a)
-        -> Theorem cx a
+infix 1 |-
+
+data (|-) : (Context -> Type) -> Formula -> Type where
+  hyp   : cx (formula a)
+       -> cx |- a
+  lam'  : (cx (formula a) -> cx |- b)
+       -> cx |- a >> b
+  (<<)  : cx |- a >> b -> cx |- a
+       -> cx |- b
+  pair' : cx |- a -> cx |- b
+       -> cx |- a /\ b
+  fst   : cx |- a /\ b
+       -> cx |- a
+  snd   : cx |- a /\ b
+       -> cx |- b
+  one   : cx |- a
+       -> cx |- a \/ b
+  two   : cx |- b
+       -> cx |- a \/ b
+  case' : cx |- a \/ b -> (cx (formula a) -> cx |- c) -> (cx (formula b) -> cx |- c)
+       -> cx |- c
+  pi'   : ({x : Value} -> cx (value x) -> cx |- p x)
+       -> cx |- FORALL p
+  (<<!) : cx |- FORALL p -> cx (value x)
+       -> cx |- p x
+  sig'  : cx (value x) -> cx |- p x
+       -> cx |- EXISTS p
+  take' : cx |- EXISTS p -> (cx (formula (p x)) -> cx |- a)
+       -> cx |- a
 
 
 -- NOTE: Issue with scoped implicits:
 -- https://github.com/idris-lang/Idris-dev/issues/2565
 
-syntax "||-" [a] = Theorem cx a
+syntax "||-" [a] = cx |- a
 
 -- prefix 1 ||-
 --
 -- (||-) : Formula -> Type
--- (||-) a = {cx : Context -> Type} -> Theorem cx a
+-- (||-) a = {cx : Context -> Type} -> cx |- a
 
 
 I : ||- a >> a

@@ -9,12 +9,14 @@ data Formula : Set where
 
 infixl 5 _<<_
 
-data Theorem : Formula -> Set where
-  _<<_ : forall {a b}   -> Theorem (a >> b) -> Theorem a
-                        -> Theorem b
-  K    : forall {a b}   -> Theorem (a >> b >> a)
-  S    : forall {a b c} -> Theorem ((a >> b >> c) >> (a >> b) >> a >> c)
+infix 1 ||-_
+
+data ||-_ : Formula -> Set where
+  _<<_ : forall {a b}   -> ||- a >> b -> ||- a
+                        -> ||- b
+  K    : forall {a b}   -> ||- a >> b >> a
+  S    : forall {a b c} -> ||- (a >> b >> c) >> (a >> b) >> a >> c
 
 
-I : forall {a} -> Theorem (a >> a)
+I : forall {a} -> ||- a >> a
 I {a = a} = (S {b = a >> a} << K) << K
