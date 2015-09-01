@@ -1,8 +1,8 @@
 module Ni
 
 
-data Value : Type where
-  Unit : Value
+data Individual : Type where
+  unit : Individual
 
 
 infixl 7 /\
@@ -14,8 +14,8 @@ data Formula : Type where
   (>>)   : Formula -> Formula -> Formula
   (/\)   : Formula -> Formula -> Formula
   (\/)   : Formula -> Formula -> Formula
-  FORALL : (Value -> Formula) -> Formula
-  EXISTS : (Value -> Formula) -> Formula
+  FORALL : (Individual -> Formula) -> Formula
+  EXISTS : (Individual -> Formula) -> Formula
   BOTTOM : Formula
 
 (>><<) : Formula -> Formula -> Formula
@@ -29,8 +29,8 @@ TOP = BOTTOM >> BOTTOM
 
 
 data Context : Type where
-  value   : Value -> Context
-  formula : Formula -> Context
+  individual : Individual -> Context
+  true       : Formula -> Context
 
 
 infixl 6 <<!
@@ -46,9 +46,9 @@ syntax take [t] as {px} ">>" [a]                       = take' t (\px => a)
 infix 1 |-
 
 data (|-) : (Context -> Type) -> Formula -> Type where
-  hyp   : cx (formula a)
+  hyp   : cx (true a)
        -> cx |- a
-  lam'  : (cx (formula a) -> cx |- b)
+  lam'  : (cx (true a) -> cx |- b)
        -> cx |- a >> b
   (<<)  : cx |- a >> b -> cx |- a
        -> cx |- b
@@ -62,15 +62,15 @@ data (|-) : (Context -> Type) -> Formula -> Type where
        -> cx |- a \/ b
   two   : cx |- b
        -> cx |- a \/ b
-  case' : cx |- a \/ b -> (cx (formula a) -> cx |- c) -> (cx (formula b) -> cx |- c)
+  case' : cx |- a \/ b -> (cx (true a) -> cx |- c) -> (cx (true b) -> cx |- c)
        -> cx |- c
-  pi'   : ({x : Value} -> cx (value x) -> cx |- p x)
+  pi'   : ({x : Individual} -> cx (individual x) -> cx |- p x)
        -> cx |- FORALL p
-  (<<!) : cx |- FORALL p -> cx (value x)
+  (<<!) : cx |- FORALL p -> cx (individual x)
        -> cx |- p x
-  sig'  : cx (value x) -> cx |- p x
+  sig'  : cx (individual x) -> cx |- p x
        -> cx |- EXISTS p
-  take' : cx |- EXISTS p -> (cx (formula (p x)) -> cx |- a)
+  take' : cx |- EXISTS p -> (cx (true (p x)) -> cx |- a)
        -> cx |- a
   efq   : cx |- BOTTOM
        -> cx |- a
@@ -100,7 +100,7 @@ S = lam f >>
         lam x >> (hyp f << hyp x) << (hyp g << hyp x)
 
 
-Example214 : {p, q : Value -> Formula} ->
+Example214 : {p, q : Individual -> Formula} ->
   ||- FORALL (\x => p x \/ NOT (p x)) /\ FORALL (\x => p x >> EXISTS (\y => q y)) >>
         FORALL (\x => EXISTS (\y => p x >> q y))
 Example214 =

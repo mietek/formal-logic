@@ -1,8 +1,8 @@
 module Nc where
 
 
-data Value : Set where
-  Unit : Value
+data Individual : Set where
+  unit : Individual
 
 
 infixl 7 _/\_
@@ -14,8 +14,8 @@ data Formula : Set where
   _>>_   : Formula -> Formula -> Formula
   _/\_   : Formula -> Formula -> Formula
   _\/_   : Formula -> Formula -> Formula
-  FORALL : (Value -> Formula) -> Formula
-  EXISTS : (Value -> Formula) -> Formula
+  FORALL : (Individual -> Formula) -> Formula
+  EXISTS : (Individual -> Formula) -> Formula
   BOTTOM : Formula
 
 _>><<_ : Formula -> Formula -> Formula
@@ -29,8 +29,8 @@ TOP = BOTTOM >> BOTTOM
 
 
 data Context : Set where
-  value   : Value -> Context
-  formula : Formula -> Context
+  individual : Individual -> Context
+  true       : Formula -> Context
 
 
 infixl 6 _<<!_
@@ -47,9 +47,9 @@ syntax efq' (\na -> b)                = efq na >> b
 infix 1 _|-_
 
 data _|-_ (cx : Context -> Set) : Formula -> Set where
-  hyp   : forall {a}     -> cx (formula a)
+  hyp   : forall {a}     -> cx (true a)
                          -> cx |- a
-  lam'  : forall {a b}   -> (cx (formula a) -> cx |- b)
+  lam'  : forall {a b}   -> (cx (true a) -> cx |- b)
                          -> cx |- a >> b
   _<<_  : forall {a b}   -> cx |- a >> b -> cx |- a
                          -> cx |- b
@@ -63,17 +63,17 @@ data _|-_ (cx : Context -> Set) : Formula -> Set where
                          -> cx |- a \/ b
   two   : forall {a b}   -> cx |- b
                          -> cx |- a \/ b
-  case' : forall {a b c} -> cx |- a \/ b -> (cx (formula a) -> cx |- c) -> (cx (formula b) -> cx |- c)
+  case' : forall {a b c} -> cx |- a \/ b -> (cx (true a) -> cx |- c) -> (cx (true b) -> cx |- c)
                          -> cx |- c
-  pi'   : forall {p}     -> (forall {x} -> cx (value x) -> cx |- p x)
+  pi'   : forall {p}     -> (forall {x} -> cx (individual x) -> cx |- p x)
                          -> cx |- FORALL p
-  _<<!_ : forall {p x}   -> cx |- FORALL p -> cx (value x)
+  _<<!_ : forall {p x}   -> cx |- FORALL p -> cx (individual x)
                          -> cx |- p x
-  sig'  : forall {p x}   -> cx (value x) -> cx |- p x
+  sig'  : forall {p x}   -> cx (individual x) -> cx |- p x
                          -> cx |- EXISTS p
-  take' : forall {p x a} -> cx |- EXISTS p -> (cx (formula (p x)) -> cx |- a)
+  take' : forall {p x a} -> cx |- EXISTS p -> (cx (true (p x)) -> cx |- a)
                          -> cx |- a
-  efq'  : forall {a}     -> (cx (formula (NOT a)) -> cx |- BOTTOM)
+  efq'  : forall {a}     -> (cx (true (NOT a)) -> cx |- BOTTOM)
                          -> cx |- a
 
 
