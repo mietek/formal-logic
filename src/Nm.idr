@@ -74,15 +74,10 @@ data (|-) : (Context -> Type) -> Formula -> Type where
        -> cx |- a
 
 
--- NOTE: Issue with scoped implicits:
--- https://github.com/idris-lang/Idris-dev/issues/2565
+prefix 1 ||-
 
-syntax "||-" [a] = cx |- a
-
--- prefix 1 ||-
---
--- (||-) : Formula -> Type
--- (||-) a = {cx : Context -> Type} -> cx |- a
+(||-) : Formula -> Type
+(||-) a = {cx : Context -> Type} -> cx |- a
 
 
 I : ||- a >> a
