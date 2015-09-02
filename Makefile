@@ -5,25 +5,25 @@ all: agda idris
 clean: agda-clean idris-clean
 
 
-agda := $(wildcard src/*.agda)
+agda := $(shell find src -name '*.agda')
 agdai := $(patsubst %.agda,%.agdai,$(agda))
 
 agda: $(agdai)
 
 %.agdai: %.agda
-	agda --safe -i $(@D) $<
+	agda --safe -i src $<
 
 agda-clean:
 	rm -f $(agdai)
 
 
-idr := $(wildcard src/*.idr)
+idr := $(shell find src -name '*.idr')
 ibc := $(patsubst %.idr,%.ibc,$(idr))
 
 idris: $(ibc)
 
 %.ibc: %.idr
-	idris --check --noprelude --total $<
+	idris --check --noprelude --total -i src $<
 
 idris-clean:
 	rm -f $(ibc)
