@@ -10,27 +10,37 @@ infixl 6 \/
 infixr 5 >>
 infixr 4 >><<
 
-data Formula : Type where
-  (>>)   : Formula -> Formula -> Formula
-  (/\)   : Formula -> Formula -> Formula
-  (\/)   : Formula -> Formula -> Formula
-  FORALL : (Individual -> Formula) -> Formula
-  EXISTS : (Individual -> Formula) -> Formula
-  BOTTOM : Formula
+Predicate : Type
 
-(>><<) : Formula -> Formula -> Formula
+data Proposition : Type where
+  (>>)   : Proposition -> Proposition -> Proposition
+  (/\)   : Proposition -> Proposition -> Proposition
+  (\/)   : Proposition -> Proposition -> Proposition
+  FORALL : Predicate -> Proposition
+  EXISTS : Predicate -> Proposition
+  BOTTOM : Proposition
+
+Predicate = Individual -> Proposition
+
+(>><<) : Proposition -> Proposition -> Proposition
 a >><< b = (a >> b) /\ (b >> a)
 
-NOT : Formula -> Formula
+NOT : Proposition -> Proposition
 NOT a = a >> BOTTOM
 
-TOP : Formula
+TOP : Proposition
 TOP = BOTTOM >> BOTTOM
 
 
-data Context : Type where
-  individual : Individual -> Context
-  true       : Formula -> Context
+infix  1 |-
+prefix 1 ||-
+
+data Judgement : Type where
+  given : Individual -> Judgement
+  true  : Proposition -> Judgement
+
+Context : Type
+Context = Judgement -> Type
 
 
 infixl 6 <<!
@@ -43,10 +53,8 @@ syntax pi {x} "!>>" [px]                               = pi' (\x => px)
 syntax "[" [x] "!*" [px] "]"                           = sig' x px
 syntax take [t] as {px} ">>" [a]                       = take' t (\px => a)
 
-infix 1 |-
-
-data (|-) : (Context -> Type) -> Formula -> Type where
-  hyp   : cx (true a)
+data (|-) : Context -> Proposition -> Type where
+  var   : cx (true a)
        -> cx |- a
   lam'  : (cx (true a) -> cx |- b)
        -> cx |- a >> b
@@ -64,47 +72,44 @@ data (|-) : (Context -> Type) -> Formula -> Type where
        -> cx |- a \/ b
   case' : cx |- a \/ b -> (cx (true a) -> cx |- c) -> (cx (true b) -> cx |- c)
        -> cx |- c
-  pi'   : ({x : Individual} -> cx (individual x) -> cx |- p x)
+  pi'   : ({x : Individual} -> cx (given x) -> cx |- p x)
        -> cx |- FORALL p
-  (<<!) : cx |- FORALL p -> cx (individual x)
+  (<<!) : cx |- FORALL p -> cx (given x)
        -> cx |- p x
-  sig'  : cx (individual x) -> cx |- p x
+  sig'  : cx (given x) -> cx |- p x
        -> cx |- EXISTS p
   take' : cx |- EXISTS p -> (cx (true (p x)) -> cx |- a)
        -> cx |- a
   efq   : cx |- BOTTOM
        -> cx |- a
 
-
-prefix 1 ||-
-
-(||-) : Formula -> Type
-(||-) a = {cx : Context -> Type} -> cx |- a
+(||-) : Proposition -> Type
+(||-) a = {cx : Context} -> cx |- a
 
 
 I : ||- a >> a
-I = lam x >> hyp x
+I = lam x >> var x
 
 K : ||- a >> b >> a
 K = lam x >>
-      lam y >> hyp x
+      lam y >> var x
 
 S : ||- (a >> b >> c) >> (a >> b) >> a >> c
 S = lam f >>
       lam g >>
-        lam x >> (hyp f << hyp x) << (hyp g << hyp x)
+        lam x >> (var f << var x) << (var g << var x)
 
 
-Example214 : {p, q : Individual -> Formula} ->
+Example214 : {p, q : Predicate} ->
   ||- FORALL (\x => p x \/ NOT (p x)) /\ FORALL (\x => p x >> EXISTS (\y => q y)) >>
         FORALL (\x => EXISTS (\y => p x >> q y))
 Example214 =
   lam u' >>
     pi x !>>
-      case fst (hyp u') <<! x
+      case fst (var u') <<! x
       of u >>
-        take snd (hyp u') <<! x << hyp u
+        take snd (var u') <<! x << var u
         as w >>
-          [ x !* lam z >> hyp w ]
+          [ x !* lam z >> var w ]
       or v >>
-        [ x !* lam w' >> efq (hyp v << hyp w') ]
+        [ x !* lam w' >> efq (var v << var w') ]

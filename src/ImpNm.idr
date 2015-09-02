@@ -3,39 +3,38 @@ module ImpNm
 
 infixr 5 >>
 
-data Formula : Type where
-  (>>) : Formula -> Formula -> Formula
+data Proposition : Type where
+  (>>) : Proposition -> Proposition -> Proposition
+
+
+infix  1 |-
+prefix 1 ||-
 
 
 infixl 5 <<
 
 syntax "lam" {a} ">>" [b] = lam' (\a => b)
 
-infix 1 |-
-
-data (|-) : (Formula -> Type) -> Formula -> Type where
-  hyp  : cx a
+data (|-) : (Proposition -> Type) -> Proposition -> Type where
+  var  : cx a
       -> cx |- a
   lam' : (cx a -> cx |- b)
       -> cx |- a >> b
   (<<) : cx |- a >> b -> cx |- a
       -> cx |- b
 
-
-prefix 1 ||-
-
-(||-) : Formula -> Type
-(||-) a = {cx : Formula -> Type} -> cx |- a
+(||-) : Proposition -> Type
+(||-) a = {cx : Proposition -> Type} -> cx |- a
 
 
 I : ||- a >> a
-I = lam x >> hyp x
+I = lam x >> var x
 
 K : ||- a >> b >> a
 K = lam x >>
-      lam y >> hyp x
+      lam y >> var x
 
 S : ||- (a >> b >> c) >> (a >> b) >> a >> c
 S = lam f >>
       lam g >>
-        lam x >> (hyp f << hyp x) << (hyp g << hyp x)
+        lam x >> (var f << var x) << (var g << var x)

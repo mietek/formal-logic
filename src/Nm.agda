@@ -10,27 +10,37 @@ infixl 6 _\/_
 infixr 5 _>>_
 infixr 4 _>><<_
 
-data Formula : Set where
-  _>>_   : Formula -> Formula -> Formula
-  _/\_   : Formula -> Formula -> Formula
-  _\/_   : Formula -> Formula -> Formula
-  FORALL : (Individual -> Formula) -> Formula
-  EXISTS : (Individual -> Formula) -> Formula
-  BOTTOM : Formula
+Predicate : Set
 
-_>><<_ : Formula -> Formula -> Formula
+data Proposition : Set where
+  _>>_   : Proposition -> Proposition -> Proposition
+  _/\_   : Proposition -> Proposition -> Proposition
+  _\/_   : Proposition -> Proposition -> Proposition
+  FORALL : Predicate -> Proposition
+  EXISTS : Predicate -> Proposition
+  BOTTOM : Proposition
+
+Predicate = Individual -> Proposition
+
+_>><<_ : Proposition -> Proposition -> Proposition
 a >><< b = (a >> b) /\ (b >> a)
 
-NOT : Formula -> Formula
+NOT : Proposition -> Proposition
 NOT a = a >> BOTTOM
 
-TOP : Formula
+TOP : Proposition
 TOP = BOTTOM >> BOTTOM
 
 
-data Context : Set where
-  individual : Individual -> Context
-  true       : Formula -> Context
+infix 1 _|-_
+infix 1 ||-_
+
+data Judgement : Set where
+  given : Individual -> Judgement
+  true  : Proposition -> Judgement
+
+Context : Set1
+Context = Judgement -> Set
 
 
 infixl 6 _<<!_
@@ -43,10 +53,8 @@ syntax pi' (\x -> px)                 = pi x !>> px
 syntax sig' x px                      = [ x !* px ]
 syntax take' t (\px -> a)             = take t as px >> a
 
-infix 1 _|-_
-
-data _|-_ (cx : Context -> Set) : Formula -> Set where
-  hyp   : forall {a}     -> cx (true a)
+data _|-_ (cx : Context) : Proposition -> Set where
+  var   : forall {a}     -> cx (true a)
                          -> cx |- a
   lam'  : forall {a b}   -> (cx (true a) -> cx |- b)
                          -> cx |- a >> b
@@ -64,30 +72,27 @@ data _|-_ (cx : Context -> Set) : Formula -> Set where
                          -> cx |- a \/ b
   case' : forall {a b c} -> cx |- a \/ b -> (cx (true a) -> cx |- c) -> (cx (true b) -> cx |- c)
                          -> cx |- c
-  pi'   : forall {p}     -> (forall {x} -> cx (individual x) -> cx |- p x)
+  pi'   : forall {p}     -> (forall {x} -> cx (given x) -> cx |- p x)
                          -> cx |- FORALL p
-  _<<!_ : forall {p x}   -> cx |- FORALL p -> cx (individual x)
+  _<<!_ : forall {p x}   -> cx |- FORALL p -> cx (given x)
                          -> cx |- p x
-  sig'  : forall {p x}   -> cx (individual x) -> cx |- p x
+  sig'  : forall {p x}   -> cx (given x) -> cx |- p x
                          -> cx |- EXISTS p
   take' : forall {p x a} -> cx |- EXISTS p -> (cx (true (p x)) -> cx |- a)
                          -> cx |- a
 
-
-infix 1 ||-_
-
-||-_ : Formula -> Set1
+||-_ : Proposition -> Set1
 ||-_ a = forall {cx} -> cx |- a
 
 
 I : forall {a} -> ||- a >> a
-I = lam x >> hyp x
+I = lam x >> var x
 
 K : forall {a b} -> ||- a >> b >> a
 K = lam x >>
-      lam y >> hyp x
+      lam y >> var x
 
 S : forall {a b c} -> ||- (a >> b >> c) >> (a >> b) >> a >> c
 S = lam f >>
       lam g >>
-        lam x >> (hyp f << hyp x) << (hyp g << hyp x)
+        lam x >> (var f << var x) << (var g << var x)

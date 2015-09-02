@@ -61,7 +61,7 @@ $ idris --noprelude --total src/FILE.idr
 
 | Symbol   | Name               | Introduction   | Elimination         |
 | :------- | :----------------- | :------------- | :------------------ |
-| —        | Hypothesis         | `hyp_`         | —                   |
+| —        | Hypothesis         | `var_`         | —                   |
 | `>>`     | Implication (⊃)    | `lam_>>_`      | `_<<_`              |
 | `/\`     | Conjunction (∧)    | `[_*_]`        | `fst_`, `snd_`      |
 | `\/`     | Disjunction (∨)    | `one_`, `two_` | `case_of_>>_or_>>_` |

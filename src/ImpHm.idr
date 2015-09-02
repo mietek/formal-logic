@@ -3,15 +3,16 @@ module ImpHm
 
 infixr 5 >>
 
-data Formula : Type where
-  (>>) : Formula -> Formula -> Formula
+data Proposition : Type where
+  (>>) : Proposition -> Proposition -> Proposition
+
+
+prefix 1 ||-
 
 
 infixl 5 <<
 
-prefix 1 ||-
-
-data (||-) : Formula -> Type where
+data (||-) : Proposition -> Type where
   (<<) : ||- a >> b -> ||- a
       -> ||- b
   K    : ||- a >> b >> a

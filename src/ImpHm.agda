@@ -3,15 +3,16 @@ module ImpHm where
 
 infixr 5 _>>_
 
-data Formula : Set where
-  _>>_ : Formula -> Formula -> Formula
+data Proposition : Set where
+  _>>_ : Proposition -> Proposition -> Proposition
+
+
+infix 1 ||-_
 
 
 infixl 5 _<<_
 
-infix 1 ||-_
-
-data ||-_ : Formula -> Set where
+data ||-_ : Proposition -> Set where
   _<<_ : forall {a b}   -> ||- a >> b -> ||- a
                         -> ||- b
   K    : forall {a b}   -> ||- a >> b >> a
