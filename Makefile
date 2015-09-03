@@ -1,8 +1,8 @@
-.PHONY: all agda idris
-all: agda idris
+.PHONY: all agda haskell idris
+all: agda haskell idris
 
-.PHONY: clean agda-clean idris-clean
-clean: agda-clean idris-clean
+.PHONY: clean agda-clean haskell-clean idris-clean
+clean: agda-clean haskell-clean idris-clean
 
 
 agda := $(shell find src -name '*.agda')
@@ -27,3 +27,16 @@ idris: $(ibc)
 
 idris-clean:
 	rm -f $(ibc)
+
+
+hs := $(shell find src -name '*.hs')
+hi := $(patsubst %.hs,%.hi,$(hs))
+o := $(patsubst %.hs,%.o,$(hs))
+
+haskell: $(hi) $(o)
+
+%.hi %.o: %.hs
+	ghc -c -Wall $<
+
+haskell-clean:
+	rm -f $(hi) $(o)
