@@ -1,10 +1,6 @@
 module Nc
 
 
-data Individual : Type where
-  unit : Individual
-
-
 infixl 7 /\
 infixl 6 \/
 infixr 5 >>
@@ -20,8 +16,6 @@ data Proposition : Type where
   EXISTS : Predicate -> Proposition
   BOTTOM : Proposition
 
-Predicate = Individual -> Proposition
-
 (>><<) : Proposition -> Proposition -> Proposition
 a >><< b = (a >> b) /\ (b >> a)
 
@@ -32,7 +26,10 @@ TOP : Proposition
 TOP = BOTTOM >> BOTTOM
 
 
-prefix 1 ||-
+data Individual : Type where
+  unit : Individual
+
+Predicate = Individual -> Proposition
 
 data Judgement : Type where
   given : Individual -> Judgement
@@ -40,11 +37,6 @@ data Judgement : Type where
 
 Context : Type
 Context = Judgement -> Type
-
-Theorem : Context -> Proposition -> Type
-
-(||-) : Proposition -> Type
-(||-) a = {cx : Context} -> Theorem cx a
 
 
 infixl 6 <<!
@@ -58,53 +50,56 @@ syntax "[" [x] "!*" [px] "]"                           = sig' x px
 syntax take [t] as {px} ">>" [a]                       = take' t (\px => a)
 syntax "efq" {na} ">>" [b]                             = efq' (\na => b)
 
-data Theorem : Context -> Proposition -> Type where
+data Term : Context -> Proposition -> Type where
   var   : cx (true a)
-       -> Theorem cx a
-  lam'  : (cx (true a) -> Theorem cx b)
-       -> Theorem cx (a >> b)
-  (<<)  : Theorem cx (a >> b) -> Theorem cx a
-       -> Theorem cx b
-  pair' : Theorem cx a -> Theorem cx b
-       -> Theorem cx (a /\ b)
-  fst   : Theorem cx (a /\ b)
-       -> Theorem cx a
-  snd   : Theorem cx (a /\ b)
-       -> Theorem cx b
-  one   : Theorem cx a
-       -> Theorem cx (a \/ b)
-  two   : Theorem cx b
-       -> Theorem cx (a \/ b)
-  case' : Theorem cx (a \/ b) -> (cx (true a) -> Theorem cx c) -> (cx (true b) -> Theorem cx c)
-       -> Theorem cx c
-  pi'   : ({x : Individual} -> cx (given x) -> Theorem cx (p x))
-       -> Theorem cx (FORALL p)
-  (<<!) : Theorem cx (FORALL p) -> cx (given x)
-       -> Theorem cx (p x)
-  sig'  : cx (given x) -> Theorem cx (p x)
-       -> Theorem cx (EXISTS p)
-  take' : Theorem cx (EXISTS p) -> (cx (true (p x)) -> Theorem cx a)
-       -> Theorem cx a
-  efq'  : (cx (true (NOT a)) -> Theorem cx BOTTOM)
-       -> Theorem cx a
+       -> Term cx a
+  lam'  : (cx (true a) -> Term cx b)
+       -> Term cx (a >> b)
+  (<<)  : Term cx (a >> b) -> Term cx a
+       -> Term cx b
+  pair' : Term cx a -> Term cx b
+       -> Term cx (a /\ b)
+  fst   : Term cx (a /\ b)
+       -> Term cx a
+  snd   : Term cx (a /\ b)
+       -> Term cx b
+  one   : Term cx a
+       -> Term cx (a \/ b)
+  two   : Term cx b
+       -> Term cx (a \/ b)
+  case' : Term cx (a \/ b) -> (cx (true a) -> Term cx c) -> (cx (true b) -> Term cx c)
+       -> Term cx c
+  pi'   : ({x : Individual} -> cx (given x) -> Term cx (p x))
+       -> Term cx (FORALL p)
+  (<<!) : Term cx (FORALL p) -> cx (given x)
+       -> Term cx (p x)
+  sig'  : cx (given x) -> Term cx (p x)
+       -> Term cx (EXISTS p)
+  take' : Term cx (EXISTS p) -> (cx (true (p x)) -> Term cx a)
+       -> Term cx a
+  efq'  : (cx (true (NOT a)) -> Term cx BOTTOM)
+       -> Term cx a
+
+Theorem : Proposition -> Type
+Theorem a = {cx : Context} -> Term cx a
 
 
-I : ||- a >> a
-I = lam x >> var x
+i : Theorem (a >> a)
+i = lam x >> var x
 
-K : ||- a >> b >> a
-K = lam x >>
+k : Theorem (a >> b >> a)
+k = lam x >>
       lam y >> var x
 
-S : ||- (a >> b >> c) >> (a >> b) >> a >> c
-S = lam f >>
+s : Theorem ((a >> b >> c) >> (a >> b) >> a >> c)
+s = lam f >>
       lam g >>
         lam x >> (var f << var x) << (var g << var x)
 
 
-Example214 : {p : Predicate} ->
-  ||- NOT (FORALL (\x => NOT (p x))) >> EXISTS p
-Example214 =
+example214 : {p : Predicate} ->
+  Theorem (NOT (FORALL (\x => NOT (p x))) >> EXISTS p)
+example214 =
   lam w >>
     efq u >>
       var w << (pi x !>>
