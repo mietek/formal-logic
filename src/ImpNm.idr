@@ -7,24 +7,31 @@ data Proposition : Type where
   (>>) : Proposition -> Proposition -> Proposition
 
 
-infix  1 |-
 prefix 1 ||-
+
+data Judgement : Type where
+  true : Proposition -> Judgement
+
+Context : Type
+Context = Judgement -> Type
+
+Theorem : Context -> Proposition -> Type
+
+(||-) : Proposition -> Type
+(||-) a = {cx : Context} -> Theorem cx a
 
 
 infixl 5 <<
 
 syntax "lam" {a} ">>" [b] = lam' (\a => b)
 
-data (|-) : (Proposition -> Type) -> Proposition -> Type where
-  var  : cx a
-      -> cx |- a
-  lam' : (cx a -> cx |- b)
-      -> cx |- a >> b
-  (<<) : cx |- a >> b -> cx |- a
-      -> cx |- b
-
-(||-) : Proposition -> Type
-(||-) a = {cx : Proposition -> Type} -> cx |- a
+data Theorem : Context -> Proposition -> Type where
+  var  : cx (true a)
+      -> Theorem cx a
+  lam' : (cx (true a) -> Theorem cx b)
+      -> Theorem cx (a >> b)
+  (<<) : Theorem cx (a >> b) -> Theorem cx a
+      -> Theorem cx b
 
 
 I : ||- a >> a

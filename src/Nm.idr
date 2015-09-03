@@ -32,7 +32,6 @@ TOP : Proposition
 TOP = BOTTOM >> BOTTOM
 
 
-infix  1 |-
 prefix 1 ||-
 
 data Judgement : Type where
@@ -41,6 +40,11 @@ data Judgement : Type where
 
 Context : Type
 Context = Judgement -> Type
+
+Theorem : Context -> Proposition -> Type
+
+(||-) : Proposition -> Type
+(||-) a = {cx : Context} -> Theorem cx a
 
 
 infixl 6 <<!
@@ -53,36 +57,33 @@ syntax pi {x} "!>>" [px]                               = pi' (\x => px)
 syntax "[" [x] "!*" [px] "]"                           = sig' x px
 syntax take [t] as {px} ">>" [a]                       = take' t (\px => a)
 
-data (|-) : Context -> Proposition -> Type where
+data Theorem : Context -> Proposition -> Type where
   var   : cx (true a)
-       -> cx |- a
-  lam'  : (cx (true a) -> cx |- b)
-       -> cx |- a >> b
-  (<<)  : cx |- a >> b -> cx |- a
-       -> cx |- b
-  pair' : cx |- a -> cx |- b
-       -> cx |- a /\ b
-  fst   : cx |- a /\ b
-       -> cx |- a
-  snd   : cx |- a /\ b
-       -> cx |- b
-  one   : cx |- a
-       -> cx |- a \/ b
-  two   : cx |- b
-       -> cx |- a \/ b
-  case' : cx |- a \/ b -> (cx (true a) -> cx |- c) -> (cx (true b) -> cx |- c)
-       -> cx |- c
-  pi'   : ({x : Individual} -> cx (given x) -> cx |- p x)
-       -> cx |- FORALL p
-  (<<!) : cx |- FORALL p -> cx (given x)
-       -> cx |- p x
-  sig'  : cx (given x) -> cx |- p x
-       -> cx |- EXISTS p
-  take' : cx |- EXISTS p -> (cx (true (p x)) -> cx |- a)
-       -> cx |- a
-
-(||-) : Proposition -> Type
-(||-) a = {cx : Context} -> cx |- a
+       -> Theorem cx a
+  lam'  : (cx (true a) -> Theorem cx b)
+       -> Theorem cx (a >> b)
+  (<<)  : Theorem cx (a >> b) -> Theorem cx a
+       -> Theorem cx b
+  pair' : Theorem cx a -> Theorem cx b
+       -> Theorem cx (a /\ b)
+  fst   : Theorem cx (a /\ b)
+       -> Theorem cx a
+  snd   : Theorem cx (a /\ b)
+       -> Theorem cx b
+  one   : Theorem cx a
+       -> Theorem cx (a \/ b)
+  two   : Theorem cx b
+       -> Theorem cx (a \/ b)
+  case' : Theorem cx (a \/ b) -> (cx (true a) -> Theorem cx c) -> (cx (true b) -> Theorem cx c)
+       -> Theorem cx c
+  pi'   : ({x : Individual} -> cx (given x) -> Theorem cx (p x))
+       -> Theorem cx (FORALL p)
+  (<<!) : Theorem cx (FORALL p) -> cx (given x)
+       -> Theorem cx (p x)
+  sig'  : cx (given x) -> Theorem cx (p x)
+       -> Theorem cx (EXISTS p)
+  take' : Theorem cx (EXISTS p) -> (cx (true (p x)) -> Theorem cx a)
+       -> Theorem cx a
 
 
 I : ||- a >> a
