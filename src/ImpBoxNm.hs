@@ -61,6 +61,12 @@ s = T $
       Lam $ \x -> (Var f :<< Var x) :<< (Var g :<< Var x)
 
 
+refl :: Theorem (BOX a :>> a)
+refl = T $
+  Lam $ \x' ->
+    Unbox (Var x') $ \x ->
+      Var x
+
 trans :: Theorem (BOX a :>> BOX (BOX a))
 trans = T $
   Lam $ \x' ->

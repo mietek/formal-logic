@@ -53,6 +53,12 @@ s = lam f >>
         lam x >> (var f << var x) << (var g << var x)
 
 
+refl : forall {a} -> Theorem (BOX a >> a)
+refl =
+  lam x' >>
+    unbox var x' as x >>
+      var x
+
 trans : forall {a} -> Theorem (BOX a >> BOX (BOX a))
 trans =
   lam x' >>
