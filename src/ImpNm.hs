@@ -25,15 +25,15 @@ data Judgement :: * where
 
 infixl 5 :<<
 
-data Term :: (Judgement -> *) -> Proposition -> * where
+data Proof :: (Judgement -> *) -> Proposition -> * where
   Var   :: cx (True a)
-        -> Term cx a
-  Lam   :: (cx (True a) -> Term cx b)
-        -> Term cx (a :>> b)
-  (:<<) :: Term cx (a :>> b) -> Term cx a
-        -> Term cx b
+        -> Proof cx a
+  Lam   :: (cx (True a) -> Proof cx b)
+        -> Proof cx (a :>> b)
+  (:<<) :: Proof cx (a :>> b) -> Proof cx a
+        -> Proof cx b
 
-newtype Theorem a = T { term :: forall cx. Term cx a }
+newtype Theorem a = T { proof :: forall cx. Proof cx a }
 
 
 i :: Theorem (a :>> a)

@@ -18,16 +18,16 @@ infixl 5 <<
 
 syntax "lam" {a} ">>" [b] = lam' (\a => b)
 
-data Term : Context -> Proposition -> Type where
+data Proof : Context -> Proposition -> Type where
   var  : cx (true a)
-      -> Term cx a
-  lam' : (cx (true a) -> Term cx b)
-      -> Term cx (a >> b)
-  (<<) : Term cx (a >> b) -> Term cx a
-      -> Term cx b
+      -> Proof cx a
+  lam' : (cx (true a) -> Proof cx b)
+      -> Proof cx (a >> b)
+  (<<) : Proof cx (a >> b) -> Proof cx a
+      -> Proof cx b
 
 Theorem : Proposition -> Type
-Theorem a = {cx : Context} -> Term cx a
+Theorem a = {cx : Context} -> Proof cx a
 
 
 i : Theorem (a >> a)

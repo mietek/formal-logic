@@ -50,38 +50,38 @@ syntax sig' x px                      = [ x !* px ]
 syntax take' t (\px -> a)             = take t as px >> a
 syntax efq' (\na -> b)                = efq na >> b
 
-data Term (cx : Context) : Proposition -> Set where
+data Proof (cx : Context) : Proposition -> Set where
   var   : forall {a}     -> cx (true a)
-                         -> Term cx a
-  lam'  : forall {a b}   -> (cx (true a) -> Term cx b)
-                         -> Term cx (a >> b)
-  _<<_  : forall {a b}   -> Term cx (a >> b) -> Term cx a
-                         -> Term cx b
-  pair' : forall {a b}   -> Term cx a -> Term cx b
-                         -> Term cx (a /\ b)
-  fst   : forall {a b}   -> Term cx (a /\ b)
-                         -> Term cx a
-  snd   : forall {a b}   -> Term cx (a /\ b)
-                         -> Term cx b
-  one   : forall {a b}   -> Term cx a
-                         -> Term cx (a \/ b)
-  two   : forall {a b}   -> Term cx b
-                         -> Term cx (a \/ b)
-  case' : forall {a b c} -> Term cx (a \/ b) -> (cx (true a) -> Term cx c) -> (cx (true b) -> Term cx c)
-                         -> Term cx c
-  pi'   : forall {p}     -> (forall {x} -> cx (given x) -> Term cx (p x))
-                         -> Term cx (FORALL p)
-  _<<!_ : forall {p x}   -> Term cx (FORALL p) -> cx (given x)
-                         -> Term cx (p x)
-  sig'  : forall {p x}   -> cx (given x) -> Term cx (p x)
-                         -> Term cx (EXISTS p)
-  take' : forall {p x a} -> Term cx (EXISTS p) -> (cx (true (p x)) -> Term cx a)
-                         -> Term cx a
-  efq'  : forall {a}     -> (cx (true (NOT a)) -> Term cx BOTTOM)
-                         -> Term cx a
+                         -> Proof cx a
+  lam'  : forall {a b}   -> (cx (true a) -> Proof cx b)
+                         -> Proof cx (a >> b)
+  _<<_  : forall {a b}   -> Proof cx (a >> b) -> Proof cx a
+                         -> Proof cx b
+  pair' : forall {a b}   -> Proof cx a -> Proof cx b
+                         -> Proof cx (a /\ b)
+  fst   : forall {a b}   -> Proof cx (a /\ b)
+                         -> Proof cx a
+  snd   : forall {a b}   -> Proof cx (a /\ b)
+                         -> Proof cx b
+  one   : forall {a b}   -> Proof cx a
+                         -> Proof cx (a \/ b)
+  two   : forall {a b}   -> Proof cx b
+                         -> Proof cx (a \/ b)
+  case' : forall {a b c} -> Proof cx (a \/ b) -> (cx (true a) -> Proof cx c) -> (cx (true b) -> Proof cx c)
+                         -> Proof cx c
+  pi'   : forall {p}     -> (forall {x} -> cx (given x) -> Proof cx (p x))
+                         -> Proof cx (FORALL p)
+  _<<!_ : forall {p x}   -> Proof cx (FORALL p) -> cx (given x)
+                         -> Proof cx (p x)
+  sig'  : forall {p x}   -> cx (given x) -> Proof cx (p x)
+                         -> Proof cx (EXISTS p)
+  take' : forall {p x a} -> Proof cx (EXISTS p) -> (cx (true (p x)) -> Proof cx a)
+                         -> Proof cx a
+  efq'  : forall {a}     -> (cx (true (NOT a)) -> Proof cx BOTTOM)
+                         -> Proof cx a
 
 Theorem : Proposition -> Set1
-Theorem a = forall {cx} -> Term cx a
+Theorem a = forall {cx} -> Proof cx a
 
 
 i : forall {a} -> Theorem (a >> a)

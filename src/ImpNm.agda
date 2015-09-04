@@ -18,16 +18,16 @@ infixl 5 _<<_
 
 syntax lam' (\a -> b) = lam a >> b
 
-data Term (cx : Context) : Proposition -> Set where
+data Proof (cx : Context) : Proposition -> Set where
   var  : forall {a}   -> cx (true a)
-                      -> Term cx a
-  lam' : forall {a b} -> (cx (true a) -> Term cx b)
-                      -> Term cx (a >> b)
-  _<<_ : forall {a b} -> Term cx (a >> b) -> Term cx a
-                      -> Term cx b
+                      -> Proof cx a
+  lam' : forall {a b} -> (cx (true a) -> Proof cx b)
+                      -> Proof cx (a >> b)
+  _<<_ : forall {a b} -> Proof cx (a >> b) -> Proof cx a
+                      -> Proof cx b
 
 Theorem : Proposition -> Set1
-Theorem a = forall {cx} -> Term cx a
+Theorem a = forall {cx} -> Proof cx a
 
 
 i : forall {a} -> Theorem (a >> a)

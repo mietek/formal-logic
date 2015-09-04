@@ -30,19 +30,19 @@ data Judgement :: * where
 
 infixl 5 :<<
 
-data Term :: (Judgement -> *) -> World -> Proposition -> * where
+data Proof :: (Judgement -> *) -> World -> Proposition -> * where
   Var   :: cx (True w a)
-        -> Term cx w a
-  Lam   :: (cx (True w a) -> Term cx w b)
-        -> Term cx w (a :>> b)
-  (:<<) :: Term cx w (a :>> b) -> Term cx w a
-        -> Term cx w b
-  Box   :: Term cx (next w) a
-        -> Term cx w (BOX a)
-  Unbox :: Term cx w (BOX a) -> (cx (True v a) -> Term cx w b)
-        -> Term cx w b
+        -> Proof cx w a
+  Lam   :: (cx (True w a) -> Proof cx w b)
+        -> Proof cx w (a :>> b)
+  (:<<) :: Proof cx w (a :>> b) -> Proof cx w a
+        -> Proof cx w b
+  Box   :: Proof cx (next w) a
+        -> Proof cx w (BOX a)
+  Unbox :: Proof cx w (BOX a) -> (cx (True v a) -> Proof cx w b)
+        -> Proof cx w b
 
-newtype Theorem a = T { term :: forall cx. forall w. Term cx w a }
+newtype Theorem a = T { proof :: forall cx. forall w. Proof cx w a }
 
 
 i :: Theorem (a :>> a)

@@ -49,38 +49,38 @@ syntax pi {x} "!>>" [px]                               = pi' (\x => px)
 syntax "[" [x] "!*" [px] "]"                           = sig' x px
 syntax take [t] as {px} ">>" [a]                       = take' t (\px => a)
 
-data Term : Context -> Proposition -> Type where
+data Proof : Context -> Proposition -> Type where
   var   : cx (true a)
-       -> Term cx a
-  lam'  : (cx (true a) -> Term cx b)
-       -> Term cx (a >> b)
-  (<<)  : Term cx (a >> b) -> Term cx a
-       -> Term cx b
-  pair' : Term cx a -> Term cx b
-       -> Term cx (a /\ b)
-  fst   : Term cx (a /\ b)
-       -> Term cx a
-  snd   : Term cx (a /\ b)
-       -> Term cx b
-  one   : Term cx a
-       -> Term cx (a \/ b)
-  two   : Term cx b
-       -> Term cx (a \/ b)
-  case' : Term cx (a \/ b) -> (cx (true a) -> Term cx c) -> (cx (true b) -> Term cx c)
-       -> Term cx c
-  pi'   : ({x : Individual} -> cx (given x) -> Term cx (p x))
-       -> Term cx (FORALL p)
-  (<<!) : Term cx (FORALL p) -> cx (given x)
-       -> Term cx (p x)
-  sig'  : cx (given x) -> Term cx (p x)
-       -> Term cx (EXISTS p)
-  take' : Term cx (EXISTS p) -> (cx (true (p x)) -> Term cx a)
-       -> Term cx a
-  efq   : Term cx BOTTOM
-       -> Term cx a
+       -> Proof cx a
+  lam'  : (cx (true a) -> Proof cx b)
+       -> Proof cx (a >> b)
+  (<<)  : Proof cx (a >> b) -> Proof cx a
+       -> Proof cx b
+  pair' : Proof cx a -> Proof cx b
+       -> Proof cx (a /\ b)
+  fst   : Proof cx (a /\ b)
+       -> Proof cx a
+  snd   : Proof cx (a /\ b)
+       -> Proof cx b
+  one   : Proof cx a
+       -> Proof cx (a \/ b)
+  two   : Proof cx b
+       -> Proof cx (a \/ b)
+  case' : Proof cx (a \/ b) -> (cx (true a) -> Proof cx c) -> (cx (true b) -> Proof cx c)
+       -> Proof cx c
+  pi'   : ({x : Individual} -> cx (given x) -> Proof cx (p x))
+       -> Proof cx (FORALL p)
+  (<<!) : Proof cx (FORALL p) -> cx (given x)
+       -> Proof cx (p x)
+  sig'  : cx (given x) -> Proof cx (p x)
+       -> Proof cx (EXISTS p)
+  take' : Proof cx (EXISTS p) -> (cx (true (p x)) -> Proof cx a)
+       -> Proof cx a
+  efq   : Proof cx BOTTOM
+       -> Proof cx a
 
 Theorem : Proposition -> Type
-Theorem a = {cx : Context} -> Term cx a
+Theorem a = {cx : Context} -> Proof cx a
 
 
 i : Theorem (a >> a)

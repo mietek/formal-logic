@@ -24,20 +24,20 @@ infixl 5 _<<_
 syntax lam' (\a -> b)      = lam a >> b
 syntax unbox' a' (\a -> b) = unbox a' as a >> b
 
-data Term (cx : Context) (w : World) : Proposition -> Set where
+data Proof (cx : Context) (w : World) : Proposition -> Set where
   var    : forall {a}     -> cx (true w a)
-                          -> Term cx w a
-  lam'   : forall {a b}   -> (cx (true w a) -> Term cx w b)
-                          -> Term cx w (a >> b)
-  _<<_   : forall {a b}   -> Term cx w (a >> b) -> Term cx w a
-                          -> Term cx w b
-  box    : forall {a}     -> Term cx (next w) a
-                          -> Term cx w (BOX a)
-  unbox' : forall {v a b} -> Term cx w (BOX a) -> (cx (true v a) -> Term cx w b)
-                          -> Term cx w b
+                          -> Proof cx w a
+  lam'   : forall {a b}   -> (cx (true w a) -> Proof cx w b)
+                          -> Proof cx w (a >> b)
+  _<<_   : forall {a b}   -> Proof cx w (a >> b) -> Proof cx w a
+                          -> Proof cx w b
+  box    : forall {a}     -> Proof cx (next w) a
+                          -> Proof cx w (BOX a)
+  unbox' : forall {v a b} -> Proof cx w (BOX a) -> (cx (true v a) -> Proof cx w b)
+                          -> Proof cx w b
 
 Theorem : Proposition -> Set1
-Theorem a = forall {cx w} -> Term cx w a
+Theorem a = forall {cx w} -> Proof cx w a
 
 
 i : forall {a} -> Theorem (a >> a)

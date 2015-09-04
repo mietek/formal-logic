@@ -24,20 +24,20 @@ infixl 5 <<
 syntax lam {a} ">>" [b]           = lam' (\a => b)
 syntax unbox [a'] as {a} ">>" [b] = unbox' a' (\a => b)
 
-data Term : Context -> World -> Proposition -> Type where
+data Proof : Context -> World -> Proposition -> Type where
   var    : cx (true w a)
-        -> Term cx w a
-  lam'   : (cx (true w a) -> Term cx w b)
-        -> Term cx w (a >> b)
-  (<<)   : Term cx w (a >> b) -> Term cx w a
-        -> Term cx w b
-  box    : Term cx (next w) a
-        -> Term cx w (BOX a)
-  unbox' : Term cx w (BOX a) -> (cx (true v a) -> Term cx w b)
-        -> Term cx w b
+        -> Proof cx w a
+  lam'   : (cx (true w a) -> Proof cx w b)
+        -> Proof cx w (a >> b)
+  (<<)   : Proof cx w (a >> b) -> Proof cx w a
+        -> Proof cx w b
+  box    : Proof cx (next w) a
+        -> Proof cx w (BOX a)
+  unbox' : Proof cx w (BOX a) -> (cx (true v a) -> Proof cx w b)
+        -> Proof cx w b
 
 Theorem : Proposition -> Type
-Theorem a = {cx : Context} -> {w : World} -> Term cx w a
+Theorem a = {cx : Context} -> {w : World} -> Proof cx w a
 
 
 i : Theorem (a >> a)
