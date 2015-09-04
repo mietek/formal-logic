@@ -42,7 +42,14 @@ Formalisation of some logical systems, in Agda, Haskell, and Idris.
 
 ### Propositional modal logic
 
-#### Implicational necessity
+#### Implicational necessity Hilbert-style
+
+* [ImpBoxHm.agda](src/ImpBoxHm.agda)
+* [ImpBoxHm.hs](src/ImpBoxHm.hs)
+* [ImpBoxHm.idr](src/ImpBoxHm.idr)
+
+
+#### Implicational necessity Gentzen-style
 
 * [ImpBoxNm.agda](src/ImpBoxNm.agda)
 * [ImpBoxNm.hs](src/ImpBoxNm.hs)
