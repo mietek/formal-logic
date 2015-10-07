@@ -5,7 +5,7 @@ all: agda haskell idris
 clean: agda-clean haskell-clean idris-clean
 
 
-agda := $(shell find src -name '*.agda')
+agda  := $(shell find src -type f -name '*.agda')
 agdai := $(patsubst %.agda,%.agdai,$(agda))
 
 agda: $(agdai)
@@ -17,26 +17,26 @@ agda-clean:
 	rm -f $(agdai)
 
 
-idr := $(shell find src -name '*.idr')
+idr := $(shell find src -type f -name '*.idr')
 ibc := $(patsubst %.idr,%.ibc,$(idr))
 
 idris: $(ibc)
 
 %.ibc: %.idr
-	idris --check --noprelude --total -i src $<
+	idris --check -i src $<
 
 idris-clean:
 	rm -f $(ibc)
 
 
-hs := $(shell find src -name '*.hs')
+hs := $(shell find src -type f -name '*.hs')
 hi := $(patsubst %.hs,%.hi,$(hs))
-o := $(patsubst %.hs,%.o,$(hs))
+o  := $(patsubst %.hs,%.o,$(hs))
 
 haskell: $(hi) $(o)
 
 %.hi %.o: %.hs
-	ghc -c -Wall $<
+	ghc --make -Wall -isrc $<
 
 haskell-clean:
 	rm -f $(hi) $(o)
