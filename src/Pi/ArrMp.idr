@@ -1,43 +1,61 @@
-module ImpNm
+-- Minimal implicational logic, PHOAS approach, initial encoding
+
+module Pi.ArrMp
+
+%default total
 
 
-infixr 5 >>
+-- Types
 
-data Proposition : Type where
-  (>>) : Proposition -> Proposition -> Proposition
-
-
-data Judgement : Type where
-  true : Proposition -> Judgement
-
-Context : Type
-Context = Judgement -> Type
+infixr 0 :=>
+data Ty : Type where
+  UNIT  :             Ty
+  (:=>) : Ty -> Ty -> Ty
 
 
-infixl 5 <<
+-- Context and truth judgement
 
-syntax "lam" {a} ">>" [b] = lam' (\a => b)
+Cx : Type
+Cx = Ty -> Type
 
-data Proof : Context -> Proposition -> Type where
-  var  : cx (true a)
-      -> Proof cx a
-  lam' : (cx (true a) -> Proof cx b)
-      -> Proof cx (a >> b)
-  (<<) : Proof cx (a >> b) -> Proof cx a
-      -> Proof cx b
-
-Theorem : Proposition -> Type
-Theorem a = {cx : Context} -> Proof cx a
+isTrue : Ty -> Cx -> Type
+isTrue a tc = tc a
 
 
-i : Theorem (a >> a)
-i = lam x >> var x
+-- Terms
 
-k : Theorem (a >> b >> a)
-k = lam x >>
-      lam y >> var x
+infixl 1 :$
+data Tm : Cx -> Ty -> Type where
+  var  : isTrue a tc                -> Tm tc a
+  lam' : (isTrue a tc -> Tm tc b)   -> Tm tc (a :=> b)
+  (:$) : Tm tc (a :=> b) -> Tm tc a -> Tm tc b
 
-s : Theorem ((a >> b >> c) >> (a >> b) >> a >> c)
-s = lam f >>
-      lam g >>
-        lam x >> (var f << var x) << (var g << var x)
+lam'' : (Tm tc a -> Tm tc b) -> Tm tc (a :=> b)
+lam'' f = lam' $ \x => f (var x)
+
+syntax "lam" {a} ":=>" [b] = lam'' (\a => b)
+
+Thm : Ty -> Type
+Thm a = {tc : Cx} -> Tm tc a
+
+
+-- Example theorems
+
+aI : Thm (a :=> a)
+aI =
+  lam x :=> x
+
+aK : Thm (a :=> b :=> a)
+aK =
+  lam x :=>
+    lam y :=> x
+
+aS : Thm ((a :=> b :=> c) :=> (a :=> b) :=> a :=> c)
+aS =
+  lam f :=>
+    lam g :=>
+      lam x :=> f :$ x :$ (g :$ x)
+
+tSKK : Thm (a :=> a)
+tSKK {a} =
+  aS {b = a :=> a} :$ aK :$ aK

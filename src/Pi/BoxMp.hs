@@ -1,82 +1,80 @@
-{-# LANGUAGE DataKinds
-           , GADTs
-           , KindSignatures
-           , NoImplicitPrelude
-           , Rank2Types
-           , TypeOperators
-           #-}
+-- Minimal implicational modal logic, PHOAS approach, initial encoding
 
-module ImpBoxNm where
+{-# LANGUAGE DataKinds, GADTs, KindSignatures, Rank2Types, Safe, TypeOperators #-}
 
-import Prelude (($))
+module Pi.BoxMp where
+
+import Lib (Nat (Suc))
 
 
-infixr 5 :>>
+-- Types
 
-data Proposition :: * where
-  (:>>) :: Proposition -> Proposition -> Proposition
-  BOX   :: Proposition -> Proposition
-
-
-data World :: * where
-  First :: World
-  Next  :: World
-
-data Judgement :: * where
-  True :: World -> Proposition -> Judgement
-
--- kind Context = Judgement -> *
+infixr 0 :=>
+data Ty :: * where
+  UNIT  ::             Ty
+  (:=>) :: Ty -> Ty -> Ty
+  BOX   :: Ty       -> Ty
 
 
-infixl 5 :<<
+-- Context and truth judgement with modal depth
 
-data Proof :: (Judgement -> *) -> World -> Proposition -> * where
-  Var   :: cx (True w a)
-        -> Proof cx w a
-  Lam   :: (cx (True w a) -> Proof cx w b)
-        -> Proof cx w (a :>> b)
-  (:<<) :: Proof cx w (a :>> b) -> Proof cx w a
-        -> Proof cx w b
-  Box   :: Proof cx (next w) a
-        -> Proof cx w (BOX a)
-  Unbox :: Proof cx w (BOX a) -> (cx (True v a) -> Proof cx w b)
-        -> Proof cx w b
+-- NOTE: Haskell does not support kind synonyms
+-- type Cx = Ty -> *
 
-newtype Theorem a = T { proof :: forall cx. forall w. Proof cx w a }
+type IsTrue (a :: Ty) (d :: Nat) (tc :: Ty -> Nat -> *) = tc a d
 
 
-i :: Theorem (a :>> a)
-i = T $
-  Lam $ \x -> Var x
+-- Terms
 
-k :: Theorem (a :>> b :>> a)
-k = T $
-  Lam $ \x ->
-    Lam $ \_ -> Var x
+infixl 1 ..$
+data Tm :: Nat -> (Ty -> Nat -> *) -> Ty -> * where
+  Var   :: IsTrue a d tc                  -> Tm d tc a
+  Lam   :: (IsTrue a d tc -> Tm d tc b)   -> Tm d tc (a :=> b)
+  App   :: Tm d tc (a :=> b) -> Tm d tc a -> Tm d tc b
+  Box   :: Tm (Suc d) tc a                -> Tm d tc (BOX a)
+  Unbox :: Tm d tc (BOX a)   -> (IsTrue a gd tc -> Tm d tc b) -> Tm d tc b
 
-s :: Theorem ((a :>> b :>> c) :>> (a :>> b) :>> a :>> c)
-s = T $
-  Lam $ \f ->
-    Lam $ \g ->
-      Lam $ \x -> (Var f :<< Var x) :<< (Var g :<< Var x)
+var :: IsTrue a d tc -> Tm d tc a
+var = Var
+
+lam :: (Tm d tc a -> Tm d tc b) -> Tm d tc (a :=> b)
+lam f = Lam $ \x -> f (var x)
+
+(..$) :: Tm d tc (a :=> b) -> Tm d tc a -> Tm d tc b
+(..$) = App
+
+box :: Tm (Suc d) tc a -> Tm d tc (BOX a)
+box = Box
+
+unbox :: Tm d tc (BOX a) -> (Tm gd tc a -> Tm d tc b) -> Tm d tc b
+unbox x' f = Unbox x' $ \x -> f (var x)
+
+type Thm a = forall d tc. Tm d tc a
 
 
-refl :: Theorem (BOX a :>> a)
-refl = T $
-  Lam $ \x' ->
-    Unbox (Var x') $ \x ->
-      Var x
+-- Example theorems
 
-trans :: Theorem (BOX a :>> BOX (BOX a))
-trans = T $
-  Lam $ \x' ->
-    Unbox (Var x') $ \x ->
-      Box (Box (Var x))
+rNec :: Thm a -> Thm (BOX a)
+rNec x =
+  box x
 
-norm :: Theorem (BOX (a :>> b) :>> BOX a :>> BOX b)
-norm = T $
-  Lam $ \f' ->
-    Lam $ \x' ->
-      Unbox (Var f') $ \f ->
-        Unbox (Var x') $ \x ->
-          Box (Var f :<< Var x)
+aK :: Thm (BOX (a :=> b) :=> BOX a :=> BOX b)
+aK =
+  lam $ \f' ->
+    lam $ \x' ->
+      unbox f' $ \f ->
+        unbox x' $ \x -> box (f ..$ x)
+
+aT :: Thm (BOX a :=> a)
+aT =
+  lam $ \x' ->
+    unbox x' $ \x -> x
+
+a4 :: Thm (BOX a :=> BOX (BOX a))
+a4 =
+  lam $ \x' ->
+    unbox x' $ \x -> box (box x)
+
+t1 :: Thm (a :=> BOX (a :=> a))
+t1 =
+  lam $ \_ -> box (lam $ \y -> y)

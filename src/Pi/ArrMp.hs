@@ -1,52 +1,63 @@
-{-# LANGUAGE DataKinds
-           , GADTs
-           , KindSignatures
-           , NoImplicitPrelude
-           , Rank2Types
-           , TypeOperators
-           #-}
+-- Minimal implicational logic, PHOAS approach, initial encoding
 
-module ImpNm where
+{-# LANGUAGE DataKinds, GADTs, KindSignatures, PatternSynonyms, Rank2Types, Safe, TypeOperators #-}
 
-import Prelude (($))
+module Pi.ArrMp where
 
 
-infixr 5 :>>
+-- Types
 
-data Proposition :: * where
-  (:>>) :: Proposition -> Proposition -> Proposition
-
-
-data Judgement :: * where
-  True :: Proposition -> Judgement
-
--- kind Context = Judgement -> *
+infixr 0 :=>
+data Ty :: * where
+  UNIT  ::             Ty
+  (:=>) :: Ty -> Ty -> Ty
 
 
-infixl 5 :<<
+-- Context and truth judgement
 
-data Proof :: (Judgement -> *) -> Proposition -> * where
-  Var   :: cx (True a)
-        -> Proof cx a
-  Lam   :: (cx (True a) -> Proof cx b)
-        -> Proof cx (a :>> b)
-  (:<<) :: Proof cx (a :>> b) -> Proof cx a
-        -> Proof cx b
+-- NOTE: Haskell does not support kind synonyms
+-- type Cx = Ty -> *
 
-newtype Theorem a = T { proof :: forall cx. Proof cx a }
+type IsTrue (a :: Ty) (tc :: Ty -> *) = tc a
 
 
-i :: Theorem (a :>> a)
-i = T $
-  Lam $ \x -> Var x
+-- Terms
 
-k :: Theorem (a :>> b :>> a)
-k = T $
-  Lam $ \x ->
-    Lam $ \_ -> Var x
+infixl 1 ..$
+data Tm :: (Ty -> *) -> Ty -> * where
+  Var :: IsTrue a tc                -> Tm tc a
+  Lam :: (IsTrue a tc -> Tm tc b)   -> Tm tc (a :=> b)
+  App :: Tm tc (a :=> b) -> Tm tc a -> Tm tc b
 
-s :: Theorem ((a :>> b :>> c) :>> (a :>> b) :>> a :>> c)
-s = T $
-  Lam $ \f ->
-    Lam $ \g ->
-      Lam $ \x -> (Var f :<< Var x) :<< (Var g :<< Var x)
+var :: IsTrue a tc -> Tm tc a
+var = Var
+
+lam :: (Tm tc a -> Tm tc b) -> Tm tc (a :=> b)
+lam f = Lam $ \x -> f (var x)
+
+(..$) :: Tm tc (a :=> b) -> Tm tc a -> Tm tc b
+(..$) = App
+
+type Thm a = forall tc. Tm tc a
+
+
+-- Example theorems
+
+aI :: Thm (a :=> a)
+aI =
+  lam $ \x -> x
+
+aK :: Thm (a :=> b :=> a)
+aK =
+  lam $ \x ->
+    lam $ \_ -> x
+
+aS :: Thm ((a :=> b :=> c) :=> (a :=> b) :=> a :=> c)
+aS =
+  lam $ \f ->
+    lam $ \g ->
+      lam $ \x -> f ..$ x ..$ (g ..$ x)
+
+tSKK :: Thm (a :=> a)
+tSKK =
+  aS ..$ aK ..$ aK

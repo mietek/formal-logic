@@ -1,107 +1,105 @@
-module Nc where
+-- Classical logic, PHOAS approach, initial encoding
+
+module Pi.C (Indiv : Set) where
 
 
-infixl 7 _/\_
-infixl 6 _\/_
-infixr 5 _>>_
-infixr 4 _>><<_
+-- Types
 
-Predicate : Set
+data Ty : Set
 
-data Proposition : Set where
-  _>>_   : Proposition -> Proposition -> Proposition
-  _/\_   : Proposition -> Proposition -> Proposition
-  _\/_   : Proposition -> Proposition -> Proposition
-  FORALL : Predicate -> Proposition
-  EXISTS : Predicate -> Proposition
-  BOTTOM : Proposition
+Pred : Set
+Pred = Indiv -> Ty
 
-_>><<_ : Proposition -> Proposition -> Proposition
-a >><< b = (a >> b) /\ (b >> a)
+infixl 2 _&&_
+infixl 1 _||_
+infixr 0 _=>_
+data Ty where
+  UNIT   :             Ty
+  _=>_   : Ty -> Ty -> Ty
+  _&&_   : Ty -> Ty -> Ty
+  _||_   : Ty -> Ty -> Ty
+  FALSE  :             Ty
+  FORALL : Pred     -> Ty
+  EXISTS : Pred     -> Ty
 
-NOT : Proposition -> Proposition
-NOT a = a >> BOTTOM
+infixr 0 _<=>_
+_<=>_ : Ty -> Ty -> Ty
+a <=> b = (a => b) && (b => a)
 
-TOP : Proposition
-TOP = BOTTOM >> BOTTOM
+NOT : Ty -> Ty
+NOT a = a => FALSE
 
-
-data Individual : Set where
-  unit : Individual
-
-Predicate = Individual -> Proposition
-
-data Judgement : Set where
-  given : Individual -> Judgement
-  true  : Proposition -> Judgement
-
-Context : Set1
-Context = Judgement -> Set
+TRUE : Ty
+TRUE = FALSE => FALSE
 
 
-infixl 6 _<<!_
-infixl 5 _<<_
+-- Context and truth/individual judgement
 
-syntax lam' (\a -> b)                 = lam a >> b
-syntax pair' a b                      = [ a * b ]
-syntax case' ab (\a -> c1) (\b -> c2) = case ab of a >> c1 or b >> c2
-syntax pi' (\x -> px)                 = pi x !>> px
-syntax sig' x px                      = [ x !* px ]
-syntax take' t (\px -> a)             = take t as px >> a
-syntax efq' (\na -> b)                = efq na >> b
+data El : Set where
+  mkTrue  : Ty    -> El
+  mkIndiv : Indiv -> El
 
-data Proof (cx : Context) : Proposition -> Set where
-  var   : forall {a}     -> cx (true a)
-                         -> Proof cx a
-  lam'  : forall {a b}   -> (cx (true a) -> Proof cx b)
-                         -> Proof cx (a >> b)
-  _<<_  : forall {a b}   -> Proof cx (a >> b) -> Proof cx a
-                         -> Proof cx b
-  pair' : forall {a b}   -> Proof cx a -> Proof cx b
-                         -> Proof cx (a /\ b)
-  fst   : forall {a b}   -> Proof cx (a /\ b)
-                         -> Proof cx a
-  snd   : forall {a b}   -> Proof cx (a /\ b)
-                         -> Proof cx b
-  one   : forall {a b}   -> Proof cx a
-                         -> Proof cx (a \/ b)
-  two   : forall {a b}   -> Proof cx b
-                         -> Proof cx (a \/ b)
-  case' : forall {a b c} -> Proof cx (a \/ b) -> (cx (true a) -> Proof cx c) -> (cx (true b) -> Proof cx c)
-                         -> Proof cx c
-  pi'   : forall {p}     -> (forall {x} -> cx (given x) -> Proof cx (p x))
-                         -> Proof cx (FORALL p)
-  _<<!_ : forall {p x}   -> Proof cx (FORALL p) -> cx (given x)
-                         -> Proof cx (p x)
-  sig'  : forall {p x}   -> cx (given x) -> Proof cx (p x)
-                         -> Proof cx (EXISTS p)
-  take' : forall {p x a} -> Proof cx (EXISTS p) -> (cx (true (p x)) -> Proof cx a)
-                         -> Proof cx a
-  efq'  : forall {a}     -> (cx (true (NOT a)) -> Proof cx BOTTOM)
-                         -> Proof cx a
+Cx : Set1
+Cx = El -> Set
 
-Theorem : Proposition -> Set1
-Theorem a = forall {cx} -> Proof cx a
+isTrue : Ty -> Cx -> Set
+isTrue a tc = tc (mkTrue a)
+
+isIndiv : Indiv -> Cx -> Set
+isIndiv x tc = tc (mkIndiv x)
 
 
-i : forall {a} -> Theorem (a >> a)
-i = lam x >> var x
+-- Terms
 
-k : forall {a b} -> Theorem (a >> b >> a)
-k = lam x >>
-      lam y >> var x
+module C where
+  infixl 2 _$$_
+  infixl 1 _$_
+  data Tm (tc : Cx) : Ty -> Set where
+    var    : forall {a}     -> isTrue a tc                      -> Tm tc a
+    lam'   : forall {a b}   -> (isTrue a tc -> Tm tc b)         -> Tm tc (a => b)
+    _$_    : forall {a b}   -> Tm tc (a => b)   -> Tm tc a      -> Tm tc b
+    pair'  : forall {a b}   -> Tm tc a          -> Tm tc b      -> Tm tc (a && b)
+    fst    : forall {a b}   -> Tm tc (a && b)                   -> Tm tc a
+    snd    : forall {a b}   -> Tm tc (a && b)                   -> Tm tc b
+    left   : forall {a b}   -> Tm tc a                          -> Tm tc (a || b)
+    right  : forall {a b}   -> Tm tc b                          -> Tm tc (a || b)
+    case'  : forall {a b c} -> Tm tc (a || b)   -> (isTrue a tc -> Tm tc c) -> (isTrue b tc -> Tm tc c) -> Tm tc c
+    pi'    : forall {p}     -> (forall {x} -> isIndiv x tc -> Tm tc (p x)) -> Tm tc (FORALL p)
+    _$$_   : forall {p x}   -> Tm tc (FORALL p) -> isIndiv x tc -> Tm tc (p x)
+    sig'   : forall {p x}   -> isIndiv x tc     -> Tm tc (p x)  -> Tm tc (EXISTS p)
+    split' : forall {p x a} -> Tm tc (EXISTS p) -> (isTrue (p x) tc -> Tm tc a) -> Tm tc a
+    abort' : forall {a}     -> (isTrue (NOT a) tc -> Tm tc FALSE)  -> Tm tc a
 
-s : forall {a b c} -> Theorem ((a >> b >> c) >> (a >> b) >> a >> c)
-s = lam f >>
-      lam g >>
-        lam x >> (var f << var x) << (var g << var x)
+  lam'' : forall {tc a b} -> (Tm tc a -> Tm tc b) -> Tm tc (a => b)
+  lam'' f = lam' \x -> f (var x)
+
+  case'' : forall {tc a b c} -> Tm tc (a || b) -> (Tm tc a -> Tm tc c) -> (Tm tc b -> Tm tc c) -> Tm tc c
+  case'' xy f g = case' xy (\x -> f (var x)) (\y -> g (var y))
+
+  split'' : forall {tc p x a} -> Tm tc (EXISTS p) -> (Tm tc (p x) -> Tm tc a) -> Tm tc a
+  split'' x f = split' x \y -> f (var y)
+
+  abort'' : forall {tc a} -> (Tm tc (NOT a) -> Tm tc FALSE) -> Tm tc a
+  abort'' f = abort' \na -> f (var na)
+
+  syntax lam''   (\a -> b)   = lam a => b
+  syntax pair'   x y         = [ x , y ]
+  syntax case''  xy (\x -> z1) (\y -> z2) = case xy of x => z1 or y => z2
+  syntax pi'     (\x -> px)  = pi x => px
+  syntax sig'    x px        = [ x ,, px ]
+  syntax split'' x (\y -> z) = split x as y => z
+  syntax abort'' (\x -> y)   = abort x => y
+
+  Thm : Ty -> Set1
+  Thm a = forall {tc} -> Tm tc a
+open C public
 
 
-example214 : forall {p} ->
-  Theorem (NOT (FORALL (\x -> NOT (p x))) >> EXISTS p)
-example214 =
-  lam w >>
-    efq u >>
-      var w << (pi x !>>
-                  lam v >>
-                    var u << [ x !* var v ])
+-- Example theorems
+
+t214 : forall {p} -> Thm (NOT (FORALL (\x -> NOT (p x))) => EXISTS p)
+t214 =
+  lam f =>
+    abort g =>
+      f $ (pi x =>
+            lam p => g $ [ x ,, p ])

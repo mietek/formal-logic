@@ -1,43 +1,61 @@
-module ImpNm where
+-- Minimal implicational logic, PHOAS approach, initial encoding
+
+module Pi.ArrMp where
 
 
-infixr 5 _>>_
+-- Types
 
-data Proposition : Set where
-  _>>_ : Proposition -> Proposition -> Proposition
-
-
-data Judgement : Set where
-  true : Proposition -> Judgement
-
-Context : Set1
-Context = Judgement -> Set
+infixr 0 _=>_
+data Ty : Set where
+  UNIT :             Ty
+  _=>_ : Ty -> Ty -> Ty
 
 
-infixl 5 _<<_
+-- Context and truth judgement
 
-syntax lam' (\a -> b) = lam a >> b
+Cx : Set1
+Cx = Ty -> Set
 
-data Proof (cx : Context) : Proposition -> Set where
-  var  : forall {a}   -> cx (true a)
-                      -> Proof cx a
-  lam' : forall {a b} -> (cx (true a) -> Proof cx b)
-                      -> Proof cx (a >> b)
-  _<<_ : forall {a b} -> Proof cx (a >> b) -> Proof cx a
-                      -> Proof cx b
-
-Theorem : Proposition -> Set1
-Theorem a = forall {cx} -> Proof cx a
+isTrue : Ty -> Cx -> Set
+isTrue a tc = tc a
 
 
-i : forall {a} -> Theorem (a >> a)
-i = lam x >> var x
+-- Terms
 
-k : forall {a b} -> Theorem (a >> b >> a)
-k = lam x >>
-      lam y >> var x
+module ArrMp where
+  infixl 1 _$_
+  data Tm (tc : Cx) : Ty -> Set where
+    var  : forall {a}   -> isTrue a tc               -> Tm tc a
+    lam' : forall {a b} -> (isTrue a tc -> Tm tc b)  -> Tm tc (a => b)
+    _$_  : forall {a b} -> Tm tc (a => b) -> Tm tc a -> Tm tc b
 
-s : forall {a b c} -> Theorem ((a >> b >> c) >> (a >> b) >> a >> c)
-s = lam f >>
-      lam g >>
-        lam x >> (var f << var x) << (var g << var x)
+  lam'' : forall {tc a b} -> (Tm tc a -> Tm tc b) -> Tm tc (a => b)
+  lam'' f = lam' \x -> f (var x)
+
+  syntax lam'' (\a -> b) = lam a => b
+
+  Thm : Ty -> Set1
+  Thm a = forall {tc} -> Tm tc a
+open ArrMp public
+
+
+-- Example theorems
+
+aI : forall {a} -> Thm (a => a)
+aI =
+  lam x => x
+
+aK : forall {a b} -> Thm (a => b => a)
+aK =
+  lam x =>
+    lam _ => x
+
+aS : forall {a b c} -> Thm ((a => b => c) => (a => b) => a => c)
+aS =
+  lam f =>
+    lam g =>
+      lam x => f $ x $ (g $ x)
+
+tSKK : forall {a} -> Thm (a => a)
+tSKK {a = a} =
+  aS {b = a => a} $ aK $ aK

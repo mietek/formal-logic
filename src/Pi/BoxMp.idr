@@ -1,74 +1,74 @@
-module ImpBoxNm
+-- Minimal implicational modal logic, PHOAS approach, initial encoding
+
+module Pi.BoxMp
+
+%default total
 
 
-infixr 5 >>
+-- Types
 
-data Proposition : Type where
-  (>>) : Proposition -> Proposition -> Proposition
-  BOX  : Proposition -> Proposition
-
-
-data World : Type where
-  first : World
-  next  : World -> World
-
-data Judgement : Type where
-  true : World -> Proposition -> Judgement
-
-Context : Type
-Context = Judgement -> Type
+infixr 0 :=>
+data Ty : Type where
+  UNIT  :             Ty
+  (:=>) : Ty -> Ty -> Ty
+  BOX   : Ty       -> Ty
 
 
-infixl 5 <<
+-- Context and truth judgement with modal depth
 
-syntax lam {a} ">>" [b]           = lam' (\a => b)
-syntax unbox [a'] as {a} ">>" [b] = unbox' a' (\a => b)
+Cx : Type
+Cx = Nat -> Ty -> Type
 
-data Proof : Context -> World -> Proposition -> Type where
-  var    : cx (true w a)
-        -> Proof cx w a
-  lam'   : (cx (true w a) -> Proof cx w b)
-        -> Proof cx w (a >> b)
-  (<<)   : Proof cx w (a >> b) -> Proof cx w a
-        -> Proof cx w b
-  box    : Proof cx (next w) a
-        -> Proof cx w (BOX a)
-  unbox' : Proof cx w (BOX a) -> (cx (true v a) -> Proof cx w b)
-        -> Proof cx w b
-
-Theorem : Proposition -> Type
-Theorem a = {cx : Context} -> {w : World} -> Proof cx w a
+isTrue : Ty -> Nat -> Cx -> Type
+isTrue a d tc = tc d a
 
 
-i : Theorem (a >> a)
-i = lam x >> var x
+-- Terms
 
-k : Theorem (a >> b >> a)
-k = lam x >>
-      lam y >> var x
+infixl 1 :$
+data Tm : Nat -> Cx -> Ty -> Type where
+  var    : isTrue a d tc                  -> Tm d tc a
+  lam'   : (isTrue a d tc -> Tm d tc b)   -> Tm d tc (a :=> b)
+  (:$)   : Tm d tc (a :=> b) -> Tm d tc a -> Tm d tc b
+  box    : Tm (succ d) tc a               -> Tm d tc (BOX a)
+  unbox' : Tm d tc (BOX a)   -> (isTrue a gd tc -> Tm d tc b) -> Tm d tc b
 
-s : Theorem ((a >> b >> c) >> (a >> b) >> a >> c)
-s = lam f >>
-      lam g >>
-        lam x >> (var f << var x) << (var g << var x)
+lam'' : (Tm d tc a -> Tm d tc b) -> Tm d tc (a :=> b)
+lam'' f = lam' $ \x => f (var x)
+
+unbox'' : Tm d tc (BOX a) -> (Tm gd tc a -> Tm d tc b) -> Tm d tc b
+unbox'' x' f = unbox' x' $ \x => f (var x)
+
+syntax "lam"   {a} ":=>" [b]         = lam''   (\a => b)
+syntax "unbox" [a'] as {a} ":=>" [b] = unbox'' a' (\a => b)
+
+Thm : Ty -> Type
+Thm a = {d : Nat} -> {tc : Cx} -> Tm d tc a
 
 
-refl : Theorem (BOX a >> a)
-refl =
-  lam x' >>
-    unbox var x' as x >>
-      var x
+-- Example theorems
 
-trans : Theorem (BOX a >> BOX (BOX a))
-trans =
-  lam x' >>
-    unbox var x' as x >>
-      box (box (var x))
+rNec : Thm a -> Thm (BOX a)
+rNec x =
+  box x
 
-norm : Theorem (BOX (a >> b) >> BOX a >> BOX b)
-norm =
-  lam f' >>
-    lam x' >>
-      unbox var f' as f >>
-        unbox var x' as x >>
-          box (var f << var x)
+aK : Thm (BOX (a :=> b) :=> BOX a :=> BOX b)
+aK =
+  lam f' :=>
+    lam x' :=>
+      unbox f' as f :=>
+        unbox x' as x :=> box (f :$ x)
+
+aT : Thm (BOX a :=> a)
+aT =
+  lam x' :=>
+    unbox x' as x :=> x
+
+a4 : Thm (BOX a :=> BOX (BOX a))
+a4 =
+  lam x' :=>
+    unbox x' as x :=> box (box x)
+
+t1 : Thm (a :=> BOX (a :=> a))
+t1 =
+  lam x :=> box (lam y :=> y)

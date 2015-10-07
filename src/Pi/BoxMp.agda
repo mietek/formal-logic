@@ -1,74 +1,77 @@
-module ImpBoxNm where
+-- Minimal implicational modal logic, PHOAS approach, initial encoding
+
+module Pi.BoxMp where
+
+open import Lib using (Nat; suc)
 
 
-infixr 5 _>>_
+-- Types
 
-data Proposition : Set where
-  _>>_ : Proposition -> Proposition -> Proposition
-  BOX  : Proposition -> Proposition
-
-
-data World : Set where
-  first : World
-  next  : World -> World
-
-data Judgement : Set where
-  true : World -> Proposition -> Judgement
-
-Context : Set1
-Context = Judgement -> Set
+infixr 0 _=>_
+data Ty : Set where
+  UNIT :             Ty
+  _=>_ : Ty -> Ty -> Ty
+  BOX  : Ty       -> Ty
 
 
-infixl 5 _<<_
+-- Context and truth judgement with modal depth
 
-syntax lam' (\a -> b)      = lam a >> b
-syntax unbox' a' (\a -> b) = unbox a' as a >> b
+Cx : Set1
+Cx = Ty -> Nat -> Set
 
-data Proof (cx : Context) (w : World) : Proposition -> Set where
-  var    : forall {a}     -> cx (true w a)
-                          -> Proof cx w a
-  lam'   : forall {a b}   -> (cx (true w a) -> Proof cx w b)
-                          -> Proof cx w (a >> b)
-  _<<_   : forall {a b}   -> Proof cx w (a >> b) -> Proof cx w a
-                          -> Proof cx w b
-  box    : forall {a}     -> Proof cx (next w) a
-                          -> Proof cx w (BOX a)
-  unbox' : forall {v a b} -> Proof cx w (BOX a) -> (cx (true v a) -> Proof cx w b)
-                          -> Proof cx w b
-
-Theorem : Proposition -> Set1
-Theorem a = forall {cx w} -> Proof cx w a
+isTrue : Ty -> Nat -> Cx -> Set
+isTrue a d tc = tc a d
 
 
-i : forall {a} -> Theorem (a >> a)
-i = lam x >> var x
+-- Terms
 
-k : forall {a b} -> Theorem (a >> b >> a)
-k = lam x >>
-      lam y >> var x
+module BoxMp where
+  infixl 1 _$_
+  data Tm (d : Nat) (tc : Cx) : Ty -> Set where
+    var    : forall {a}      -> isTrue a d tc                 -> Tm d tc a
+    lam'   : forall {a b}    -> (isTrue a d tc -> Tm d tc b)  -> Tm d tc (a => b)
+    _$_    : forall {a b}    -> Tm d tc (a => b) -> Tm d tc a -> Tm d tc b
+    box    : forall {a}      -> Tm (suc d) tc a               -> Tm d tc (BOX a)
+    unbox' : forall {>d a b} -> Tm d tc (BOX a)  -> (isTrue a >d tc -> Tm d tc b) -> Tm d tc b
 
-s : forall {a b c} -> Theorem ((a >> b >> c) >> (a >> b) >> a >> c)
-s = lam f >>
-      lam g >>
-        lam x >> (var f << var x) << (var g << var x)
+  lam'' : forall {d tc a b} -> (Tm d tc a -> Tm d tc b) -> Tm d tc (a => b)
+  lam'' f = lam' \x -> f (var x)
+
+  unbox'' : forall {d >d tc a b} -> Tm d tc (BOX a) -> (Tm >d tc a -> Tm d tc b) -> Tm d tc b
+  unbox'' x f = unbox' x \y -> f (var y)
+
+  syntax lam''   (\a -> b)    = lam a => b
+  syntax unbox'' x' (\x -> y) = unbox x' as x => y
+
+  Thm : Ty -> Set1
+  Thm a = forall {d tc} -> Tm d tc a
+open BoxMp public
 
 
-refl : forall {a} -> Theorem (BOX a >> a)
-refl =
-  lam x' >>
-    unbox var x' as x >>
-      var x
+-- Example theorems
 
-trans : forall {a} -> Theorem (BOX a >> BOX (BOX a))
-trans =
-  lam x' >>
-    unbox var x' as x >>
-      box (box (var x))
+rNec : forall {a} -> Thm a -> Thm (BOX a)
+rNec x =
+  box x
 
-norm : forall {a b} -> Theorem (BOX (a >> b) >> BOX a >> BOX b)
-norm =
-  lam f' >>
-    lam x' >>
-      unbox var f' as f >>
-        unbox var x' as x >>
-          box (var f << var x)
+aK : forall {a b} -> Thm (BOX (a => b) => BOX a => BOX b)
+aK =
+  lam f' =>
+    lam x' =>
+      unbox f' as f =>
+        unbox x' as x =>
+          box (f $ x)
+
+aT : forall {a} -> Thm (BOX a => a)
+aT =
+  lam x' =>
+    unbox x' as x => x
+
+a4 : forall {a} -> Thm (BOX a => BOX (BOX a))
+a4 =
+  lam x' =>
+    unbox x' as x => box (box x)
+
+t1 : forall {a} -> Thm (a => BOX (a => a))
+t1 =
+  lam _ => box (lam y => y)

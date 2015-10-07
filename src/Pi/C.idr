@@ -1,107 +1,109 @@
-module Nc
+-- Classical logic, PHOAS approach, initial encoding
+
+module Pi.C
+
+%default total
 
 
-infixl 7 /\
-infixl 6 \/
-infixr 5 >>
-infixr 4 >><<
+-- Types
 
-Predicate : Type
+data Indiv : Type where
+  TODO : Indiv
 
-data Proposition : Type where
-  (>>)   : Proposition -> Proposition -> Proposition
-  (/\)   : Proposition -> Proposition -> Proposition
-  (\/)   : Proposition -> Proposition -> Proposition
-  FORALL : Predicate -> Proposition
-  EXISTS : Predicate -> Proposition
-  BOTTOM : Proposition
+Ty : Type
 
-(>><<) : Proposition -> Proposition -> Proposition
-a >><< b = (a >> b) /\ (b >> a)
+Pred : Type
+Pred = Indiv -> Ty
 
-NOT : Proposition -> Proposition
-NOT a = a >> BOTTOM
+infixl 2 :&&
+infixl 1 :||
+infixr 0 :=>
+data Ty : Type where
+  UNIT   :             Ty
+  (:=>)  : Ty -> Ty -> Ty
+  (:&&)  : Ty -> Ty -> Ty
+  (:||)  : Ty -> Ty -> Ty
+  FALSE  :             Ty
+  FORALL : Pred     -> Ty
+  EXISTS : Pred     -> Ty
 
-TOP : Proposition
-TOP = BOTTOM >> BOTTOM
+infixr 0 :<=>
+(:<=>) : Ty -> Ty -> Ty
+(:<=>) a b = (a :=> b) :&& (b :=> a)
 
+NOT : Ty -> Ty
+NOT a = a :=> FALSE
 
-data Individual : Type where
-  unit : Individual
-
-Predicate = Individual -> Proposition
-
-data Judgement : Type where
-  given : Individual -> Judgement
-  true  : Proposition -> Judgement
-
-Context : Type
-Context = Judgement -> Type
+TRUE : Ty
+TRUE = FALSE :=> FALSE
 
 
-infixl 6 <<!
-infixl 5 <<
+-- Context and truth judgement
 
-syntax lam {a} ">>" [b]                                = lam' (\a => b)
-syntax "[" [a] "*" [b] "]"                             = pair' a b
-syntax "case" [ab] "of" {a} ">>" [c1] or {b} ">>" [c2] = case' ab (\a => c1) (\b => c2)
-syntax pi {x} "!>>" [px]                               = pi' (\x => px)
-syntax "[" [x] "!*" [px] "]"                           = sig' x px
-syntax take [t] as {px} ">>" [a]                       = take' t (\px => a)
-syntax "efq" {na} ">>" [b]                             = efq' (\na => b)
+data El : Type where
+  mkTrue  : Ty    -> El
+  mkIndiv : Indiv -> El
 
-data Proof : Context -> Proposition -> Type where
-  var   : cx (true a)
-       -> Proof cx a
-  lam'  : (cx (true a) -> Proof cx b)
-       -> Proof cx (a >> b)
-  (<<)  : Proof cx (a >> b) -> Proof cx a
-       -> Proof cx b
-  pair' : Proof cx a -> Proof cx b
-       -> Proof cx (a /\ b)
-  fst   : Proof cx (a /\ b)
-       -> Proof cx a
-  snd   : Proof cx (a /\ b)
-       -> Proof cx b
-  one   : Proof cx a
-       -> Proof cx (a \/ b)
-  two   : Proof cx b
-       -> Proof cx (a \/ b)
-  case' : Proof cx (a \/ b) -> (cx (true a) -> Proof cx c) -> (cx (true b) -> Proof cx c)
-       -> Proof cx c
-  pi'   : ({x : Individual} -> cx (given x) -> Proof cx (p x))
-       -> Proof cx (FORALL p)
-  (<<!) : Proof cx (FORALL p) -> cx (given x)
-       -> Proof cx (p x)
-  sig'  : cx (given x) -> Proof cx (p x)
-       -> Proof cx (EXISTS p)
-  take' : Proof cx (EXISTS p) -> (cx (true (p x)) -> Proof cx a)
-       -> Proof cx a
-  efq'  : (cx (true (NOT a)) -> Proof cx BOTTOM)
-       -> Proof cx a
+Cx : Type
+Cx = El -> Type
 
-Theorem : Proposition -> Type
-Theorem a = {cx : Context} -> Proof cx a
+isTrue : Ty -> Cx -> Type
+isTrue a tc = tc (mkTrue a)
+
+isIndiv : Indiv -> Cx -> Type
+isIndiv x tc = tc (mkIndiv x)
 
 
-i : Theorem (a >> a)
-i = lam x >> var x
+-- Terms
 
-k : Theorem (a >> b >> a)
-k = lam x >>
-      lam y >> var x
+infixl 2 :$$
+infixl 1 :$
 
-s : Theorem ((a >> b >> c) >> (a >> b) >> a >> c)
-s = lam f >>
-      lam g >>
-        lam x >> (var f << var x) << (var g << var x)
+data Tm : Cx -> Ty -> Type where
+  var    : isTrue a tc                           -> Tm tc a
+  lam'   : (isTrue a tc -> Tm tc b)              -> Tm tc (a :=> b)
+  (:$)   : Tm tc (a :=> b)  -> Tm tc a           -> Tm tc b
+  pair   : Tm tc a          -> Tm tc b           -> Tm tc (a :&& b)
+  fst    : Tm tc (a :&& b)                       -> Tm tc a
+  snd    : Tm tc (a :&& b)                       -> Tm tc b
+  left   : Tm tc a                               -> Tm tc (a :|| b)
+  right  : Tm tc b                               -> Tm tc (a :|| b)
+  case'  : Tm tc (a :|| b)  -> (isTrue a tc -> Tm tc c) -> (isTrue b tc -> Tm tc c) -> Tm tc c
+  pi'    : ({x : Indiv} -> isIndiv x tc -> Tm tc (p x)) -> Tm tc (FORALL p)
+  (:$$)  : Tm tc (FORALL p) -> isIndiv x tc      -> Tm tc (p x)
+  sig    : isIndiv x tc     -> Tm tc (p x)       -> Tm tc (EXISTS p)
+  split' : Tm tc (EXISTS p) -> (isTrue (p x) tc -> Tm tc a) -> Tm tc a
+  abort' : (isTrue (NOT a) tc -> Tm tc FALSE)    -> Tm tc a
+
+lam'' : (Tm tc a -> Tm tc b) -> Tm tc (a :=> b)
+lam'' f = lam' $ \x => f (var x)
+
+case'' : Tm tc (a :|| b) -> (Tm tc a -> Tm tc c) -> (Tm tc b -> Tm tc c) -> Tm tc c
+case'' xy f g = case' xy (\x => f (var x)) (\y => g (var y))
+
+split'' : Tm tc (EXISTS p) -> (Tm tc (p x) -> Tm tc a) -> Tm tc a
+split'' x f = split' x $ \y => f (var y)
+
+abort'' : (Tm tc (NOT a) -> Tm tc FALSE) -> Tm tc a
+abort'' f = abort' $ \na => f (var na)
+
+syntax "lam"   {a}  ":=>" [b]           = lam'' (\a => b)
+syntax "["     [a]  ","   [b] "]"       = pair a b
+syntax "case"  [ab] "of"  {a} ":=>" [c1] or {b} ":=>" [c2] = case'' ab (\a => c1) (\b => c2)
+syntax "pi"    {x}  ":=>" [y]           = pi' (\x => y)
+syntax "["     [x]  ",,"  [y] "]"       = sig x y
+syntax "split" [x]  as    {y} ":=>" [z] = split'' x (\y => z)
+syntax "abort" {a}  ":=>" [b]           = abort'' (\a => b)
+
+Thm : Ty -> Type
+Thm a = {tc : Cx} -> Tm tc a
 
 
-example214 : {p : Predicate} ->
-  Theorem (NOT (FORALL (\x => NOT (p x))) >> EXISTS p)
-example214 =
-  lam w >>
-    efq u >>
-      var w << (pi x !>>
-                  lam v >>
-                    var u << [ x !* var v ])
+-- Example theorems
+
+t214 : Thm (NOT (FORALL (\x => NOT (p x))) :=> EXISTS p)
+t214 =
+  lam f :=>
+    abort g :=>
+      f :$ (pi x :=>
+            lam p :=> g :$ [ x ,, p ])
