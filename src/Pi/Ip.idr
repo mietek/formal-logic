@@ -64,3 +64,29 @@ syntax "case" [ab] "of" {a} ":=>" [c1] or {b} ":=>" [c2] = case'' ab (\a => c1) 
 
 Thm : Ty -> Type
 Thm a = {tc : Cx} -> Tm tc a
+
+
+-- Example theorems
+
+t1 : Thm (a :=> NOT a :=> b)
+t1 =
+  lam x :=>
+    lam f :=> abort (f :$ x)
+
+t2 : Thm (NOT a :=> a :=> b)
+t2 =
+  lam f :=>
+    lam x :=> abort (f :$ x)
+
+t3 : Thm (a :=> NOT (NOT a))
+t3 =
+  lam x :=>
+    lam f :=> f :$ x
+
+t4 : Thm (NOT a :<=> NOT (NOT (NOT a)))
+t4 =
+  [ lam f :=>
+      lam g :=> g :$ f
+  , lam g :=>
+      lam x :=> g :$ (lam f :=> f :$ x)
+  ]

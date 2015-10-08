@@ -69,3 +69,29 @@ module Ip where
   Thm : Ty -> Set
   Thm a = forall {tc} -> Tm tc a
 open Ip public
+
+
+-- Example theorems
+
+t1 : forall {a b} -> Thm (a => NOT a => b)
+t1 =
+  lam=>
+    lam=> abort (v0 $ v1)
+
+t2 : forall {a b} -> Thm (NOT a => a => b)
+t2 =
+  lam=>
+    lam=> abort (v1 $ v0)
+
+t3 : forall {a} -> Thm (a => NOT (NOT a))
+t3 =
+  lam=>
+    lam=> v0 $ v1
+
+t4 : forall {a} -> Thm (NOT a <=> NOT (NOT (NOT a)))
+t4 =
+  [ lam=>
+      lam=> v0 $ v1
+  , lam=>
+      lam=> v1 $ (lam=> v0 $ v1)
+  ]
