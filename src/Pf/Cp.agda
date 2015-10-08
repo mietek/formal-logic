@@ -90,3 +90,4 @@ module Cp where
 
   Thm : Ty -> Set1
   Thm a = forall {tr tc} {{_ : Tm tr}} -> tr tc a
+open Cp public

@@ -67,5 +67,8 @@ case'' xy f g = case' xy (\x => f (var x)) (\y => g (var y))
 syntax "["    [a]  ","  [b] "]" = pair a b
 syntax "case" [ab] "of" {a} ":=>" [c1] or {b} ":=>" [c2] = case'' ab (\a => c1) (\b => c2)
 
+class MpTm tr => IpTm (tr : TmRepr) where
+  abort : tr tc FALSE -> tr tc a
+
 Thm : Ty -> Type
-Thm a = {tr : TmRepr} -> {tc : Cx} -> MpTm tr => tr tc a
+Thm a = {tr : TmRepr} -> {tc : Cx} -> IpTm tr => tr tc a

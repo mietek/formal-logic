@@ -39,7 +39,7 @@ isTrue a i tc = VMem a i tc
 
 -- Terms
 
-module Mp where
+module Ip where
   infixl 1 _$_
   infixr 0 lam=>_
   data Tm {tn} (tc : Cx tn) : Ty -> Set where
@@ -62,3 +62,4 @@ module Mp where
 
   Thm : Ty -> Set
   Thm a = forall {tn} {tc : Cx tn} -> Tm tc a
+open Ip public

@@ -74,7 +74,7 @@ module Mp where
     syntax case'' xy (\x -> z1) (\y -> z2) = case xy of x => z1 or y => z2
   open Tm {{...}} public
 
-module Cp where
+module Ip where
   record Tm (tr : TmRepr) : Set1 where
     field
       abort : forall {tc a} -> tr tc FALSE -> tr tc a
@@ -85,3 +85,4 @@ module Cp where
 
   Thm : Ty -> Set1
   Thm a = forall {tr tc} {{_ : Tm tr}} -> tr tc a
+open Ip public

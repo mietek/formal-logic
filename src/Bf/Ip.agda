@@ -89,3 +89,4 @@ module Ip where
 
   Thm : Ty -> Set1
   Thm a = forall {tr tc} {{_ : Tm tr}} -> tr tc a
+open Ip public

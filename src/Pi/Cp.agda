@@ -37,7 +37,7 @@ isTrue a tc = tc a
 
 -- Terms
 
-module Mp where
+module Cp where
   infixl 1 _$_
   data Tm (tc : Cx) : Ty -> Set where
     var    : forall {a}     -> isTrue a tc               -> Tm tc a
@@ -67,3 +67,4 @@ module Mp where
 
   Thm : Ty -> Set1
   Thm a = forall {tc} -> Tm tc a
+open Cp public

@@ -67,5 +67,13 @@ case'' xy f g = case' xy (\x => f (var x)) (\y => g (var y))
 syntax "["    [a]  ","  [b] "]" = pair a b
 syntax "case" [ab] "of" {a} ":=>" [c1] or {b} ":=>" [c2] = case'' ab (\a => c1) (\b => c2)
 
+class MpTm tr => CpTm (tr : TmRepr) where
+  abort' : (isTrue (NOT a) tc -> tr tc FALSE) -> tr tc a
+
+abort'' : {tr : TmRepr} -> CpTm tr => (tr tc (NOT a) -> tr tc FALSE) -> tr tc a
+abort'' f = abort' $ \na => f (var na)
+
+syntax "abort" {a} ":=>" [b] = abort'' (\a => b)
+
 Thm : Ty -> Type
-Thm a = {tr : TmRepr} -> {tc : Cx} -> MpTm tr => tr tc a
+Thm a = {tr : TmRepr} -> {tc : Cx} -> CpTm tr => tr tc a

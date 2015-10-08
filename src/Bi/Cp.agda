@@ -39,7 +39,7 @@ isTrue a tc = LMem a tc
 
 -- Terms
 
-module Mp where
+module Cp where
   infixl 1 _$_
   infixr 0 lam=>_
   infixr 0 abort=>_
@@ -69,3 +69,4 @@ module Mp where
 
   Thm : Ty -> Set
   Thm a = forall {tc} -> Tm tc a
+open Cp public
