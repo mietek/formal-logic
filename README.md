@@ -97,14 +97,14 @@ This section describes the notation available in the PHOAS approach; in the de B
 
 | **Op** | **Type**  | **Constructors**             | **Eliminators**
 | :----: | :-------- | :--------------------------- | :--------------------
-| →      | `:=>`     | `lam` *λ*                    | *e₁* `..$` *e₂*
+| →      | `:=>`     | `lam` *λ*                    | **i**: *e₁* `:$` *e₂* ; **f**: *e₁* `.$` *e₂*
 | ∧      | `:&&`     | `pair` `(` *e₁* `,` *e₂* `)` | `fst'` *e* ; `snd'`  *e*
 | ∨      | `:||`     | `left` *e* ; `right` *e*     | `case'` *e₀* *λ₁* *λ₂*
 | ⊥      | `FALSE`   | —                            | **I**: `abort` *e* ; **C**: `abort` *λ*
 | ↔︎      | `:<=>`    | —                            | —
 | ¬      | `NOT`     | —                            | —
 | ⊤      | `TRUE`    | —                            | —
-| ∀      | `FORALL`  | `pi` *λ*                     | *e₁* `..$$` *e₂*
+| ∀      | `FORALL`  | `pi` *λ*                     | **i**: *e₁* `:$$` *e₂* ; **f**: *e₁* `.$$` *e₂*
 | ∃      | `EXISTS`  | `sig` `(` *e₁* `,` *e₂* `)`  | `split` *e₀* *λ*
 | □      | `BOX`     | `box` *e*                    | `unbox` *e₀* *λ*
 | ◇      | `DIAMOND` | —                            | —

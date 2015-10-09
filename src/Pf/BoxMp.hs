@@ -26,11 +26,11 @@ type IsTrue (a :: Ty) (d :: Nat) (tc :: Ty -> Nat -> *) = tc a d
 
 -- Terms
 
-infixl 1 ..$
+infixl 1 .$
 class ArrMpTm (tr :: Nat -> (Ty -> Nat -> *) -> Ty -> *) where
   var  :: IsTrue a d tc                  -> tr d tc a
   lam' :: (IsTrue a d tc -> tr d tc b)   -> tr d tc (a :=> b)
-  (..$) :: tr d tc (a :=> b) -> tr d tc a -> tr d tc b
+  (.$) :: tr d tc (a :=> b) -> tr d tc a -> tr d tc b
 
 lam :: ArrMpTm tr => (tr d tc a -> tr d tc b) -> tr d tc (a :=> b)
 lam f = lam' $ \x -> f (var x)
@@ -56,7 +56,7 @@ aK =
   lam $ \f' ->
     lam $ \x' ->
       unbox f' $ \f ->
-        unbox x' $ \x -> box (f ..$ x)
+        unbox x' $ \x -> box (f .$ x)
 
 aT :: Thm (BOX a :=> a)
 aT =

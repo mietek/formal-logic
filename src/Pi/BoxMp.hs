@@ -26,11 +26,11 @@ type IsTrue (a :: Ty) (d :: Nat) (tc :: Ty -> Nat -> *) = tc a d
 
 -- Terms
 
-infixl 1 ..$
+infixl 1 :$
 data Tm :: Nat -> (Ty -> Nat -> *) -> Ty -> * where
   Var   :: IsTrue a d tc                  -> Tm d tc a
   Lam   :: (IsTrue a d tc -> Tm d tc b)   -> Tm d tc (a :=> b)
-  App   :: Tm d tc (a :=> b) -> Tm d tc a -> Tm d tc b
+  (:$)  :: Tm d tc (a :=> b) -> Tm d tc a -> Tm d tc b
   Box   :: Tm (Suc d) tc a                -> Tm d tc (BOX a)
   Unbox :: Tm d tc (BOX a)   -> (IsTrue a gd tc -> Tm d tc b) -> Tm d tc b
 
@@ -39,9 +39,6 @@ var = Var
 
 lam :: (Tm d tc a -> Tm d tc b) -> Tm d tc (a :=> b)
 lam f = Lam $ \x -> f (var x)
-
-(..$) :: Tm d tc (a :=> b) -> Tm d tc a -> Tm d tc b
-(..$) = App
 
 box :: Tm (Suc d) tc a -> Tm d tc (BOX a)
 box = Box
@@ -63,7 +60,7 @@ aK =
   lam $ \f' ->
     lam $ \x' ->
       unbox f' $ \f ->
-        unbox x' $ \x -> box (f ..$ x)
+        unbox x' $ \x -> box (f :$ x)
 
 aT :: Thm (BOX a :=> a)
 aT =

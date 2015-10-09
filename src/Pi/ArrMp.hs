@@ -23,20 +23,17 @@ type IsTrue (a :: Ty) (tc :: Ty -> *) = tc a
 
 -- Terms
 
-infixl 1 ..$
+infixl 1 :$
 data Tm :: (Ty -> *) -> Ty -> * where
-  Var :: IsTrue a tc                -> Tm tc a
-  Lam :: (IsTrue a tc -> Tm tc b)   -> Tm tc (a :=> b)
-  App :: Tm tc (a :=> b) -> Tm tc a -> Tm tc b
+  Var  :: IsTrue a tc                -> Tm tc a
+  Lam  :: (IsTrue a tc -> Tm tc b)   -> Tm tc (a :=> b)
+  (:$) :: Tm tc (a :=> b) -> Tm tc a -> Tm tc b
 
 var :: IsTrue a tc -> Tm tc a
 var = Var
 
 lam :: (Tm tc a -> Tm tc b) -> Tm tc (a :=> b)
 lam f = Lam $ \x -> f (var x)
-
-(..$) :: Tm tc (a :=> b) -> Tm tc a -> Tm tc b
-(..$) = App
 
 type Thm a = forall tc. Tm tc a
 
@@ -56,8 +53,8 @@ aS :: Thm ((a :=> b :=> c) :=> (a :=> b) :=> a :=> c)
 aS =
   lam $ \f ->
     lam $ \g ->
-      lam $ \x -> f ..$ x ..$ (g ..$ x)
+      lam $ \x -> f :$ x :$ (g :$ x)
 
 tSKK :: Thm (a :=> a)
 tSKK =
-  aS ..$ aK ..$ aK
+  aS :$ aK :$ aK

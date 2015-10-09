@@ -35,11 +35,11 @@ type IsTrue (a :: Ty) (tc :: Ty -> *) = tc a
 
 -- Terms
 
-infixl 1 ..$
+infixl 1 :$
 data Tm :: (Ty -> *) -> Ty -> * where
   Var    :: IsTrue a tc                -> Tm tc a
   Lam    :: (IsTrue a tc -> Tm tc b)   -> Tm tc (a :=> b)
-  App    :: Tm tc (a :=> b) -> Tm tc a -> Tm tc b
+  (:$)   :: Tm tc (a :=> b) -> Tm tc a -> Tm tc b
   Pair   :: Tm tc a         -> Tm tc b -> Tm tc (a :&& b)
   Fst    :: Tm tc (a :&& b)            -> Tm tc a
   Snd    :: Tm tc (a :&& b)            -> Tm tc b
@@ -53,9 +53,6 @@ var = Var
 
 lam :: (Tm tc a -> Tm tc b) -> Tm tc (a :=> b)
 lam f = Lam $ \x -> f (var x)
-
-(..$) :: Tm tc (a :=> b) -> Tm tc a -> Tm tc b
-(..$) = App
 
 pair :: (Tm tc a, Tm tc b) -> Tm tc (a :&& b)
 pair (a, b) = Pair a b
@@ -86,23 +83,23 @@ type Thm a = forall tc. Tm tc a
 t1 :: Thm (a :=> NOT a :=> b)
 t1 =
   lam $ \x ->
-    lam $ \f -> abort (f ..$ x)
+    lam $ \f -> abort (f :$ x)
 
 t2 :: Thm (NOT a :=> a :=> b)
 t2 =
   lam $ \f ->
-    lam $ \x -> abort (f ..$ x)
+    lam $ \x -> abort (f :$ x)
 
 t3 :: Thm (a :=> NOT (NOT a))
 t3 =
   lam $ \x ->
-    lam $ \f -> f ..$ x
+    lam $ \f -> f :$ x
 
 t4 :: Thm (NOT a :<=> NOT (NOT (NOT a)))
 t4 =
   pair
     ( lam $ \f ->
-        lam $ \g -> g ..$ f
+        lam $ \g -> g :$ f
     , lam $ \g ->
-        lam $ \x -> g ..$ (lam $ \f -> f ..$ x)
+        lam $ \x -> g :$ (lam $ \f -> f :$ x)
     )

@@ -35,11 +35,11 @@ type IsTrue (a :: Ty) (tc :: Ty -> *) = tc a
 
 -- Terms
 
-infixl 1 ..$
+infixl 1 .$
 class ArrMpTm (tr :: (Ty -> *) -> Ty -> *) where
   var  :: IsTrue a tc                -> tr tc a
   lam' :: (IsTrue a tc -> tr tc b)   -> tr tc (a :=> b)
-  (..$) :: tr tc (a :=> b) -> tr tc a -> tr tc b
+  (.$) :: tr tc (a :=> b) -> tr tc a -> tr tc b
 
 lam :: ArrMpTm tr => (tr tc a -> tr tc b) -> tr tc (a :=> b)
 lam f = lam' $ \x -> f (var x)

@@ -35,11 +35,11 @@ type IsTrue (a :: Ty) (tc :: Ty -> *) = tc a
 
 -- Terms
 
-infixl 1 ..$
+infixl 1 .$
 class ArrMpTm (tr :: (Ty -> *) -> Ty -> *) where
   var  :: IsTrue a tc                -> tr tc a
   lam' :: (IsTrue a tc -> tr tc b)   -> tr tc (a :=> b)
-  (..$) :: tr tc (a :=> b) -> tr tc a -> tr tc b
+  (.$) :: tr tc (a :=> b) -> tr tc a -> tr tc b
 
 lam :: ArrMpTm tr => (tr tc a -> tr tc b) -> tr tc (a :=> b)
 lam f = lam' $ \x -> f (var x)
@@ -191,11 +191,11 @@ l11 =
   pair
     ( lam $ \xyz ->
         pair
-          ( lam $ \x -> fst' (xyz ..$ x)
-          , lam $ \x -> snd' (xyz ..$ x)
+          ( lam $ \x -> fst' (xyz .$ x)
+          , lam $ \x -> snd' (xyz .$ x)
           )
     , lam $ \xyxz ->
-        lam $ \x -> pair ( fst' xyxz ..$ x , snd' xyxz ..$ x )
+        lam $ \x -> pair ( fst' xyxz .$ x , snd' xyxz .$ x )
     )
 
 l12 :: Thm ((a :=> TRUE) :<=> TRUE)
@@ -209,10 +209,10 @@ l13 :: Thm ((a :=> (b :=> c)) :<=> ((a :&& b) :=> c))
 l13 =
   pair
     ( lam $ \xyz ->
-        lam $ \xy -> xyz ..$ fst' xy ..$ snd' xy
+        lam $ \xy -> xyz .$ fst' xy .$ snd' xy
     , lam $ \xyz ->
         lam $ \x ->
-          lam $ \y -> xyz ..$ pair ( x , y )
+          lam $ \y -> xyz .$ pair ( x , y )
     )
 
 l16 :: Thm (((a :&& b) :=> c) :<=> (a :=> (b :=> c)))
@@ -220,15 +220,15 @@ l16 =
   pair
     ( lam $ \xyz ->
         lam $ \x ->
-          lam $ \y -> xyz ..$ pair ( x , y )
+          lam $ \y -> xyz .$ pair ( x , y )
     , lam $ \xyz ->
-        lam $ \xy -> xyz ..$ fst' xy ..$ snd' xy
+        lam $ \xy -> xyz .$ fst' xy .$ snd' xy
     )
 
 l17 :: Thm ((TRUE :=> a) :<=> a)
 l17 =
   pair
-    ( lam $ \tx -> tx ..$ (lam $ \nt -> nt)
+    ( lam $ \tx -> tx .$ (lam $ \nt -> nt)
     , lam $ \x  -> lam $ \_ -> x
     )
 
@@ -237,12 +237,12 @@ l19 =
   pair
     ( lam $ \xyz ->
         pair
-          ( lam $ \x -> xyz ..$ left x
-          , lam $ \y -> xyz ..$ right y
+          ( lam $ \x -> xyz .$ left x
+          , lam $ \y -> xyz .$ right y
           )
     , lam $ \xzyz ->
         lam $ \xy ->
           case' xy
-            (\x -> fst' xzyz ..$ x)
-            (\y -> snd' xzyz ..$ y)
+            (\x -> fst' xzyz .$ x)
+            (\y -> snd' xzyz .$ y)
     )

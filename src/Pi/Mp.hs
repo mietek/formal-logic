@@ -35,11 +35,11 @@ type IsTrue (a :: Ty) (tc :: Ty -> *) = tc a
 
 -- Terms
 
-infixl 1 ..$
+infixl 1 :$
 data Tm :: (Ty -> *) -> Ty -> * where
   Var    :: IsTrue a tc                -> Tm tc a
   Lam    :: (IsTrue a tc -> Tm tc b)   -> Tm tc (a :=> b)
-  App    :: Tm tc (a :=> b) -> Tm tc a -> Tm tc b
+  (:$)   :: Tm tc (a :=> b) -> Tm tc a -> Tm tc b
   Pair   :: Tm tc a         -> Tm tc b -> Tm tc (a :&& b)
   Fst    :: Tm tc (a :&& b)            -> Tm tc a
   Snd    :: Tm tc (a :&& b)            -> Tm tc b
@@ -52,9 +52,6 @@ var = Var
 
 lam :: (Tm tc a -> Tm tc b) -> Tm tc (a :=> b)
 lam f = Lam $ \x -> f (var x)
-
-(..$) :: Tm tc (a :=> b) -> Tm tc a -> Tm tc b
-(..$) = App
 
 pair :: (Tm tc a, Tm tc b) -> Tm tc (a :&& b)
 pair (a, b) = Pair a b
@@ -207,11 +204,11 @@ l11 =
   pair
     ( lam $ \xyz ->
         pair
-          ( lam $ \x -> fst' (xyz ..$ x)
-          , lam $ \x -> snd' (xyz ..$ x)
+          ( lam $ \x -> fst' (xyz :$ x)
+          , lam $ \x -> snd' (xyz :$ x)
           )
     , lam $ \xyxz ->
-        lam $ \x -> pair ( fst' xyxz ..$ x , snd' xyxz ..$ x )
+        lam $ \x -> pair ( fst' xyxz :$ x , snd' xyxz :$ x )
     )
 
 l12 :: Thm ((a :=> TRUE) :<=> TRUE)
@@ -225,10 +222,10 @@ l13 :: Thm ((a :=> (b :=> c)) :<=> ((a :&& b) :=> c))
 l13 =
   pair
     ( lam $ \xyz ->
-        lam $ \xy -> xyz ..$ fst' xy ..$ snd' xy
+        lam $ \xy -> xyz :$ fst' xy :$ snd' xy
     , lam $ \xyz ->
         lam $ \x ->
-          lam $ \y -> xyz ..$ pair ( x , y )
+          lam $ \y -> xyz :$ pair ( x , y )
     )
 
 l16 :: Thm (((a :&& b) :=> c) :<=> (a :=> (b :=> c)))
@@ -236,15 +233,15 @@ l16 =
   pair
     ( lam $ \xyz ->
         lam $ \x ->
-          lam $ \y -> xyz ..$ pair ( x , y )
+          lam $ \y -> xyz :$ pair ( x , y )
     , lam $ \xyz ->
-        lam $ \xy -> xyz ..$ fst' xy ..$ snd' xy
+        lam $ \xy -> xyz :$ fst' xy :$ snd' xy
     )
 
 l17 :: Thm ((TRUE :=> a) :<=> a)
 l17 =
   pair
-    ( lam $ \tx -> tx ..$ (lam $ \nt -> nt)
+    ( lam $ \tx -> tx :$ (lam $ \nt -> nt)
     , lam $ \x  -> lam $ \_ -> x
     )
 
@@ -253,12 +250,12 @@ l19 =
   pair
     ( lam $ \xyz ->
         pair
-          ( lam $ \x -> xyz ..$ left x
-          , lam $ \y -> xyz ..$ right y
+          ( lam $ \x -> xyz :$ left x
+          , lam $ \y -> xyz :$ right y
           )
     , lam $ \xzyz ->
         lam $ \xy ->
           case' xy
-            (\x -> fst' xzyz ..$ x)
-            (\y -> snd' xzyz ..$ y)
+            (\x -> fst' xzyz :$ x)
+            (\y -> snd' xzyz :$ y)
     )

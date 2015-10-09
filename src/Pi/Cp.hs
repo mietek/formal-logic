@@ -35,11 +35,11 @@ type IsTrue (a :: Ty) (tc :: Ty -> *) = tc a
 
 -- Terms
 
-infixl 1 ..$
+infixl 1 :$
 data Tm :: (Ty -> *) -> Ty -> * where
   Var    :: IsTrue a tc                -> Tm tc a
   Lam    :: (IsTrue a tc -> Tm tc b)   -> Tm tc (a :=> b)
-  App    :: Tm tc (a :=> b) -> Tm tc a -> Tm tc b
+  (:$)   :: Tm tc (a :=> b) -> Tm tc a -> Tm tc b
   Pair   :: Tm tc a         -> Tm tc b -> Tm tc (a :&& b)
   Fst    :: Tm tc (a :&& b)            -> Tm tc a
   Snd    :: Tm tc (a :&& b)            -> Tm tc b
@@ -53,9 +53,6 @@ var = Var
 
 lam :: (Tm tc a -> Tm tc b) -> Tm tc (a :=> b)
 lam f = Lam $ \x -> f (var x)
-
-(..$) :: Tm tc (a :=> b) -> Tm tc a -> Tm tc b
-(..$) = App
 
 pair :: (Tm tc a, Tm tc b) -> Tm tc (a :&& b)
 pair (a, b) = Pair a b
