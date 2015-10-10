@@ -1,6 +1,6 @@
 -- Minimal implicational logic, PHOAS approach, initial encoding
 
-{-# LANGUAGE DataKinds, GADTs, KindSignatures, PatternSynonyms, Rank2Types, Safe, TypeOperators #-}
+{-# LANGUAGE DataKinds, GADTs, KindSignatures, Rank2Types, Safe, TypeOperators #-}
 
 module Pi.ArrMp where
 
